@@ -20,6 +20,13 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
                 </li>
+                {% if current_user.is_authenticated and current_user.role in ['admin', 'mecanico'] %}
+                <li class="nav-item">
+                    <a class="nav-link text-warning fw-bold" href="{{ url_for('main.noc_monitor') }}" target="_blank">
+                        <i class="fas fa-desktop me-1"></i> Monitor NOC
+                    </a>
+                </li>
+                {% endif %}
                 {% if current_user.is_authenticated and current_user.role == 'admin' %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('auth.register') }}">

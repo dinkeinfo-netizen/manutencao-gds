@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="30"> <!-- Refresh a cada 30 segundos -->
+    <title>NOC - Monitoramento de Chamados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-dark: #1e293b;
+            --text-main: #f8fafc;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            /* Evitar scroll se possível na visualização NOC */
+        }
+
+        .noc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--card-dark);
+            padding-bottom: 15px;
+        }
+
+        .noc-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-blue);
+        }
+
+        .noc-clock {
+            font-size: 2rem;
+            font-family: monospace;
+            background: var(--card-dark);
+            padding: 5px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--accent-blue);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .os-card {
+            background: var(--card-dark);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 10px solid var(--accent-blue);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .os-card.status-andamento {
+            border-left-color: var(--accent-green);
+        }
+
+        .os-card.urgente {
+            border-left-color: var(--accent-red);
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        .os-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+        }
+
+        .os-equipamento {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .os-local {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+
+        .os-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 10px;
+        }
+
+        .os-timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-aberta {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
+        }
+
+        .badge-andamento {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 100px;
+            font-size: 2rem;
+            opacity: 0.5;
+        }
+
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--card-dark);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-blue);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="noc-header">
+        <div class="noc-title">
+            <i class="fas fa-desktop me-3"></i>Monitor de Manutenção GDS
+        </div>
+        <div class="d-flex align-items-center gap-4">
+            <div class="text-end">
+                <div style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase;">Total Ativas</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-blue);">{{ ordens|length }}</div>
+            </div>
+            <div class="noc-clock" id="clock">00:00:00</div>
+        </div>
+    </div>
+
+    <div class="grid-container">
+        {% for os in ordens %}
+        <div
+            class="os-card {{ 'status-andamento' if os.status == 'Em Andamento' }} {{ 'urgente' if os.horas_total >= 2 }}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="os-number">#{{ os.numero_os }}</div>
+                <span class="status-badge {{ 'badge-aberta' if os.status == 'Aberta' else 'badge-andamento' }}">
+                    {{ os.status }}
+                </span>
+            </div>
+
+            <div class="os-equipamento" title="{{ os.equipamento.nome }}">
+                {{ os.equipamento.nome }}
+            </div>
+            <div class="os-local">
+                <i class="fas fa-map-marker-alt me-2"></i>{{ os.localizacao.nome }}
+            </div>
+
+            <div style="font-size: 0.9rem; opacity: 0.7; height: 3em; overflow: hidden;">
+                {{ os.motivo[:100] }}{{ '...' if os.motivo|length > 100 }}
+            </div>
+
+            <div class="os-info">
+                <div class="text-muted" style="font-size: 0.8rem;">
+                    Solicitante: {{ os.solicitante }}
+                </div>
+                <div class="os-timer" title="Tempo total de espera">
+                    <i class="far fa-clock me-2"></i>{{ os.tempo_decorrido }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-check-circle fa-3x mb-4 d-block" style="color: var(--accent-green);"></i>
+            Nenhuma manutenção pendente no momento.
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR');
+            document.getElementById('clock').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Som de alerta se houver novo chamado (opcional, mas legal para NOC)
+        // Somente se a contagem subir entre recarregamentos
+    </script>
+</body>
+
+</html>

@@ -1169,4 +1169,23 @@ def baixar_template_importacao():
     except Exception as e:
         current_app.logger.error(f"Erro ao gerar template: {str(e)}")
         flash('Erro ao gerar template de importação.', 'danger')
-        return redirect(request.referrer or url_for('main.index'))
+@main_bp.route('/noc')
+@login_required
+def noc_monitor():
+    """Painel de Monitoramento (NOC) para visualização em telas grandes"""
+    # Buscar OS abertas e em andamento
+    ordens_ativas = OrdemServico.query.filter(
+        OrdemServico.status.in_(['Aberta', 'Em Andamento'])
+    ).order_by(OrdemServico.data_inicio.asc()).all()
+    
+    # Calcular quanto tempo cada uma está aberta e formatar
+    agora = datetime.now()
+    for os in ordens_ativas:
+        delta = agora - os.data_inicio
+        total_seconds = int(delta.total_seconds())
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        os.tempo_decorrido = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        os.horas_total = hours # Para manter a lógica de alerta no template se necessário
+        
+    return render_template('noc_monitor.html', ordens=ordens_ativas)

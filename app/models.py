@@ -40,7 +40,7 @@ class OrdemServico(db.Model):
     equipamento = db.relationship('Equipamento', backref='ordens_servico')
     motivo = db.Column(db.Text, nullable=False)
     mecanico_id = db.Column(db.Integer, db.ForeignKey('mecanicos.id'))
-    data_inicio = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_inicio = db.Column(db.DateTime, nullable=False, default=datetime.now)
     data_inicio_execucao = db.Column(db.DateTime)  # Data quando o mecânico clicou em "Iniciar"
     data_termino = db.Column(db.DateTime)
     status = db.Column(db.String(20), default='Aberta')

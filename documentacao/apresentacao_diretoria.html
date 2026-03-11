@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentação Executiva - Sistema GDS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #0f172a;
+            --accent: #3b82f6;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--secondary) 0%, #1e293b 100%);
+            color: var(--white);
+            padding: 80px 20px;
+            text-align: center;
+            clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: -50px auto 50px;
+            padding: 0 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: var(--secondary);
+        }
+
+        .section-title {
+            text-align: center;
+            margin: 80px 0 40px;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        .section-title .divider {
+            width: 80px;
+            height: 4px;
+            background: var(--primary);
+            margin: 0 auto;
+            border-radius: 2px;
+        }
+
+        .impact-box {
+            background: var(--white);
+            border-radius: 30px;
+            padding: 60px;
+            margin-top: 50px;
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03);
+        }
+
+        .impact-text {
+            flex: 1;
+        }
+
+        .impact-text h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--secondary);
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--secondary);
+            color: var(--white);
+            margin-top: 100px;
+        }
+
+        .footer p {
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .impact-box {
+                flex-direction: column;
+                text-align: center;
+                padding: 40px 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header">
+        <h1>Transformação Digital na Manutenção</h1>
+        <p>Apresentação Estratégica do Sistema GDS: Eficiência, Controle e Redução de Custos Operacionais.</p>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <i class="fas fa-chart-line"></i>
+                <h3>Visibilidade Total</h3>
+                <p>Dashboards em tempo real com KPIs de produtividade, status de equipamentos e tempo médio de reparo
+                    (MTTR).</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-file-contract"></i>
+                <h3>Conformidade e Auditoria</h3>
+                <p>Registro histórico imutável de todas as intervenções, com assinaturas digitais e evidências
+                    fotográficas.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-desktop"></i>
+                <h3>Monitor NOC</h3>
+                <p>Central de Monitoramento contínuo para visualização em TVs de 50"+. Alertas visuais instântaneos para
+                    chamados críticos.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-clock"></i>
+                <h3>Precisão de Tempo</h3>
+                <p>Configuração de fuso horário local (America/Sao_Paulo) garantindo que cada segundo de parada seja
+                    registrado com exatidão.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-piggy-bank"></i>
+                <h3>Redução de Custos</h3>
+                <p>Otimização do tempo da equipe técnica e controle rigoroso de materiais utilizados em cada ordem de
+                    serviço.</p>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <h2>Pilares do Projeto</h2>
+            <div class="divider"></div>
+        </div>
+
+        <div class="impact-box">
+            <div class="impact-text">
+                <h2>Eficiência Operacional</h2>
+                <p>O Sistema GDS elimina o uso de papel, reduz erros de transcrição e acelera o fluxo de comunicação
+                    entre a operação e a manutenção. A digitalização permite uma resposta 40% mais rápida a paradas
+                    críticas.</p>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-value">100%</span>
+                        <span class="stat-label">Digital</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">-25%</span>
+                        <span class="stat-label">Down Time</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">+30%</span>
+                        <span class="stat-label">Vida Útil</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card" style="border-left: 5px solid var(--primary);">
+                <h3>Estratégia de Dados</h3>
+                <p>Transformamos dados brutos em decisões inteligentes. O sistema identifica tendências de falhas antes
+                    que elas ocorram.</p>
+            </div>
+            <div class="card" style="border-left: 5px solid var(--primary);">
+                <h3>Gestão de Ativos</h3>
+                <p>Controle total sobre o ciclo de vida de cada equipamento, garantindo que o plano de manutenção seja
+                    seguido à risca.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>RQ MAN – 073 01 | DINKE Soluções</p>
+        <p style="margin-top: 10px; font-size: 0.8rem;">&copy; 2026 Sistema GDS. Todos os direitos reservados.</p>
+    </footer>
+
+</body>
+
+</html>

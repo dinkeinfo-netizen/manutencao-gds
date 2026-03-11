@@ -9,6 +9,7 @@ Uma aplicação web completa baseada em Flask para gestão de ordens de serviço
 - **Assinaturas Digitais**: Coleta de assinaturas do mecânico e do conferente para validação.
 - **Importação/Exportação em Massa**: Importação de equipamentos e localizações via Excel; exportação de histórico de manutenção e KPIs.
 - **Dashboard de Indicadores**: KPIs em tempo real por mecânico, indisponibilidade de equipamentos e tipos de manutenção.
+- **Monitor NOC (Central de Operações)**: Painel de alta visibilidade para monitores/TVs com atualização em tempo real (30s) e alertas visuais de urgência.
 - **Níveis de Acesso**: Permissões especializadas para Admin, Mecânicos e Usuários Padrão.
 - **Notificações por E-mail**: Alertas automáticos para abertura e finalização de atividades de manutenção.
 
