@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="{{ url_for('main.config_mecanicos') }}" 
+                   class="list-group-item list-group-item-action {{ 'active' if active_page == 'mecanicos' }}">
+                   Mecânicos
+                </a>
+                <a href="{{ url_for('main.config_equipamentos') }}" 
+                   class="list-group-item list-group-item-action {{ 'active' if active_page == 'equipamentos' }}">
+                   Equipamentos
+                </a>
+                <a href="{{ url_for('main.config_localizacoes') }}" 
+                   class="list-group-item list-group-item-action {{ 'active' if active_page == 'localizacoes' }}">
+                   Localizações
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            {% block config_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

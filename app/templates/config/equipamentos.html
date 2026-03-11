@@ -1,0 +1,219 @@
+{% extends "config/base_config.html" %}
+{% set active_page = "equipamentos" %}
+
+{% block config_content %}
+<!-- Style consolidated -->
+<style>
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .modal-box {
+        background: white;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header-custom {
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn-close-custom {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .modal-body-custom {
+        padding: 20px;
+    }
+
+    .modal-footer-custom {
+        padding: 15px 20px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+</style>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>
+            Adicionar Equipamento
+        </h5>
+        <button type="button" class="btn btn-success" id="btnAbrirImportacao">
+            <i class="fas fa-file-import me-2"></i>
+            Importar Excel
+        </button>
+    </div>
+
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.codigo.label(class="form-label") }}
+                    {{ form.codigo(class="form-control") }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.nome.label(class="form-label") }}
+                    {{ form.nome(class="form-control") }}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>
+                Salvar
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Equipamentos Cadastrados</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for equipamento in equipamentos %}
+                    <tr>
+                        <td><strong>{{ equipamento.codigo }}</strong></td>
+                        <td>{{ equipamento.nome }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('main.editar_equipamento', id=equipamento.id) }}"
+                                    class="btn btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger"
+                                    onclick="abrirModalExclusao('{{ equipamento.id }}', '{{ equipamento.codigo }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="modalImportacao" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header-custom" style="background-color: #28a745;">
+            <h5 class="mb-0">Importar Excel</h5>
+            <button type="button" class="btn-close-custom" onclick="fecharModais()">×</button>
+        </div>
+        <form action="{{ url_for('main.importar_configuracoes') }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-body-custom">
+                <div class="mb-4 text-center">
+                    <a href="{{ url_for('main.baixar_template_importacao') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-download me-2"></i> Baixar Planilha Modelo
+                    </a>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Arquivo Excel (.xlsx):</label>
+                    <input type="file" name="arquivo" class="form-control" accept=".xlsx" required>
+                </div>
+            </div>
+            <div class="modal-footer-custom">
+                <button type="button" class="btn btn-secondary" onclick="fecharModais()">Cancelar</button>
+                <button type="submit" class="btn btn-success">Iniciar Importação</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalExclusao" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header-custom" style="background-color: #dc3545;">
+            <h5 class="mb-0">Confirmar Exclusão</h5>
+            <button type="button" class="btn-close-custom" onclick="fecharModais()">×</button>
+        </div>
+        <div class="modal-body-custom">
+            <p>Deseja excluir o equipamento <strong id="excluirNome"></strong>?</p>
+        </div>
+        <div class="modal-footer-custom">
+            <button type="button" class="btn btn-secondary" onclick="fecharModais()">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="btnConfirmarExclusao">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<!-- JS consolidated -->
+<script>
+    console.log('🛠️ Script Equipamentos Carregado');
+
+    // IDs
+    const modalImp = document.getElementById('modalImportacao');
+    const modalExc = document.getElementById('modalExclusao');
+    const btnImp = document.getElementById('btnAbrirImportacao');
+
+    // Open Import
+    if (btnImp) {
+        btnImp.addEventListener('click', function () {
+            console.log('🟢 Abrindo modal import');
+            modalImp.style.display = 'flex';
+        });
+    }
+
+    function fecharModais() {
+        modalImp.style.display = 'none';
+        modalExc.style.display = 'none';
+    }
+
+    let idParaExcluir = null;
+    function abrirModalExclusao(id, nome) {
+        idParaExcluir = id;
+        document.getElementById('excluirNome').textContent = nome;
+        modalExc.style.display = 'flex';
+    }
+
+    document.getElementById('btnConfirmarExclusao').addEventListener('click', function () {
+        if (!idParaExcluir) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/config/equipamentos/excluir/' + idParaExcluir;
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = 'csrf_token'; csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+        document.body.appendChild(form);
+        form.submit();
+    });
+
+    window.onclick = function (e) {
+        if (e.target.className === 'modal-overlay') fecharModais();
+    };
+</script>
+{% endblock %}

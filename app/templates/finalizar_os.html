@@ -1,0 +1,901 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Finalizar Manutenção - OS #{{ os.numero_os }}</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <i class="bi bi-tools me-2"></i>
+            <strong>Equipamento:</strong> {{ os.equipamento.nome }} | 
+            <strong>Local:</strong> {{ os.localizacao.nome }}
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="finalizarForm">
+        {{ form.hidden_tag() }}
+        
+        <!-- Descrição do Serviço -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-file-text me-2"></i>Descrição do Serviço Realizado
+            </div>
+            <div class="card-body">
+                {{ form.descricao_servico(class="form-control", rows=4, required=True, placeholder="Descreva detalhadamente o serviço realizado...") }}
+                {% if form.descricao_servico.errors %}
+                    <div class="text-danger mt-2">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        {{ form.descricao_servico.errors[0] }}
+                    </div>
+                {% endif %}
+                <div class="form-text">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Seja específico sobre os procedimentos realizados
+                </div>
+            </div>
+        </div>
+        
+        <!-- Materiais Utilizados -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-box me-2"></i>Materiais Utilizados
+            </div>
+            <div class="card-body">
+                {{ form.materiais_utilizados(class="form-control", rows=3, placeholder="Liste os materiais, peças e componentes utilizados...") }}
+                <div class="form-text">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Inclua códigos, quantidades e descrições dos materiais
+                </div>
+            </div>
+        </div>
+
+        <!-- Mecânico e Fotos -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-person-gear me-2"></i>Mecânico Responsável
+                    </div>
+                    <div class="card-body">
+                        {{ form.mecanico_responsavel(class="form-select") }}
+                        {% if form.mecanico_responsavel.errors %}
+                            <div class="text-danger mt-2">
+                                <i class="bi bi-exclamation-circle me-1"></i>
+                                {{ form.mecanico_responsavel.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-camera me-2"></i>Fotos do Serviço
+                    </div>
+                    <div class="card-body">
+                        <input type="file" name="fotos" class="form-control" multiple accept="image/png, image/jpeg" id="fotosInput">
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Formatos: PNG, JPG | Máximo: 5 arquivos | Tamanho máx: 5MB cada
+                        </div>
+                        <div id="previewContainer" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Checklist Melhorado -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-clipboard-check me-2"></i>
+                <strong>Check List de Verificação Pós Manutenção – RQ MAN – 066/01</strong>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Há graxa/óleo escorrendo? -->
+                    <div class="col-md-6 mb-4">
+                        <div class="question-container">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-droplet me-2 text-primary"></i>
+                                Há graxa/óleo escorrendo?
+                            </label>
+                            <div class="radio-group">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="graxa_oleo" id="graxa_sim" value="sim" required>
+                                    <label class="form-check-label text-danger fw-bold" for="graxa_sim">
+                                        <i class="bi bi-x-circle me-1"></i>SIM
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="graxa_oleo" id="graxa_nao" value="nao">
+                                    <label class="form-check-label text-success fw-bold" for="graxa_nao">
+                                        <i class="bi bi-check-circle me-1"></i>NÃO
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Limpeza realizada? -->
+                    <div class="col-md-6 mb-4">
+                        <div class="question-container">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-brush me-2 text-primary"></i>
+                                Limpeza realizada?
+                            </label>
+                            <div class="radio-group">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="limpeza" id="limpeza_sim" value="sim" required>
+                                    <label class="form-check-label text-success fw-bold" for="limpeza_sim">
+                                        <i class="bi bi-check-circle me-1"></i>SIM
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="limpeza" id="limpeza_nao" value="nao">
+                                    <label class="form-check-label text-danger fw-bold" for="limpeza_nao">
+                                        <i class="bi bi-x-circle me-1"></i>NÃO
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Peças soltas? -->
+                    <div class="col-md-6 mb-4">
+                        <div class="question-container">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-nut me-2 text-primary"></i>
+                                Peças soltas?
+                            </label>
+                            <div class="radio-group">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="pecas_soltas" id="pecas_sim" value="sim" required>
+                                    <label class="form-check-label text-danger fw-bold" for="pecas_sim">
+                                        <i class="bi bi-x-circle me-1"></i>SIM
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="pecas_soltas" id="pecas_nao" value="nao">
+                                    <label class="form-check-label text-success fw-bold" for="pecas_nao">
+                                        <i class="bi bi-check-circle me-1"></i>NÃO
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipamento liberado? -->
+                    <div class="col-md-6 mb-4">
+                        <div class="question-container">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-unlock me-2 text-primary"></i>
+                                Equipamento liberado para operação?
+                            </label>
+                            <div class="radio-group">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="equipamento_liberado" id="liberado_sim" value="sim" required>
+                                    <label class="form-check-label text-success fw-bold" for="liberado_sim">
+                                        <i class="bi bi-check-circle me-1"></i>SIM
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="equipamento_liberado" id="liberado_nao" value="nao">
+                                    <label class="form-check-label text-danger fw-bold" for="liberado_nao">
+                                        <i class="bi bi-x-circle me-1"></i>NÃO
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumo do Checklist -->
+                <div class="alert alert-info mt-3">
+                    <h6><i class="bi bi-info-circle me-2"></i>Resumo do Checklist</h6>
+                    <div id="checklistSummary" class="mt-2">
+                        <small class="text-muted">Preencha as verificações acima para ver o resumo</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nomes dos Responsáveis -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-people me-2"></i>Responsáveis pela Execução
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="bi bi-person-gear me-2"></i>Nome do Mecânico
+                            <span class="text-danger">*</span>
+                        </label>
+                        {{ form.nome_mecanico(class="form-control", required=True, placeholder="Nome completo do mecânico") }}
+                        {% if form.nome_mecanico.errors %}
+                            <div class="text-danger mt-2">
+                                <i class="bi bi-exclamation-circle me-1"></i>
+                                {{ form.nome_mecanico.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="bi bi-person-check me-2"></i>Nome do Conferente
+                            <span class="text-danger">*</span>
+                        </label>
+                        {{ form.nome_conferente(class="form-control", required=True, placeholder="Nome completo do conferente") }}
+                        {% if form.nome_conferente.errors %}
+                            <div class="text-danger mt-2">
+                                <i class="bi bi-exclamation-circle me-1"></i>
+                                {{ form.nome_conferente.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assinaturas Digitais -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-pencil-square me-2"></i>Assinaturas Digitais
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Assinatura do Mecânico -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-person-gear me-2"></i>Assinatura do Mecânico 
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="signature-container">
+                            <canvas id="mechanicCanvas" class="signature-canvas"></canvas>
+                            <div class="signature-controls mt-2">
+                                <button type="button" id="clearMechanic" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eraser me-1"></i>Limpar
+                                </button>
+                                <span id="mechanicStatus" class="text-muted ms-2">Não assinado</span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="mechanic_signature" id="mechanicSignature">
+                    </div>
+
+                    <!-- Assinatura do Conferente -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-person-check me-2"></i>Assinatura do Conferente 
+                            <span class="text-danger">*</span>
+                        </label>
+                        <div class="signature-container">
+                            <canvas id="inspectorCanvas" class="signature-canvas"></canvas>
+                            <div class="signature-controls mt-2">
+                                <button type="button" id="clearInspector" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eraser me-1"></i>Limpar
+                                </button>
+                                <span id="inspectorStatus" class="text-muted ms-2">Não assinado</span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="inspector_signature" id="inspectorSignature">
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Importante:</strong> Ambas as assinaturas são obrigatórias para finalizar a OS.
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex gap-2 justify-content-between">
+                    <a href="{{ url_for('main.manutencoes_andamento') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Voltar
+                    </a>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-warning" id="draftBtn">
+                            <i class="bi bi-file-earmark me-2"></i>Salvar Rascunho
+                        </button>
+                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                            <i class="bi bi-check-circle me-2"></i>Salvar e Finalizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+/* Assinaturas */
+.signature-canvas {
+    border: 3px solid #ddd;
+    border-radius: 8px;
+    width: 100%;
+    height: 200px;
+    background-color: #fafafa;
+    cursor: crosshair;
+    transition: all 0.3s ease;
+}
+
+.signature-canvas:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.signature-container {
+    position: relative;
+}
+
+.signature-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.canvas-signed {
+    border-color: #28a745 !important;
+    background-color: #f8fff8 !important;
+}
+
+/* Checklist aprimorado */
+.question-container {
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.question-container:hover {
+    border-color: #007bff;
+    background: #f0f8ff;
+}
+
+.radio-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.form-check-input:checked + .form-check-label {
+    font-weight: bold;
+    transform: scale(1.05);
+}
+
+/* Cards melhorados */
+.card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card-header {
+    font-weight: 600;
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Preview de fotos */
+.photo-preview {
+    position: relative;
+    display: inline-block;
+    margin: 0.25rem;
+}
+
+.photo-preview img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid #dee2e6;
+}
+
+.photo-preview .remove-photo {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* Estados visuais */
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .radio-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .signature-canvas {
+        height: 150px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Loading states */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+class SignaturePad {
+    constructor(canvasId, clearBtnId, statusId, hiddenInputId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.clearBtn = document.getElementById(clearBtnId);
+        this.status = document.getElementById(statusId);
+        this.hiddenInput = document.getElementById(hiddenInputId);
+        
+        this.isDrawing = false;
+        this.isSigned = false;
+        
+        this.setupCanvas();
+        this.setupEvents();
+    }
+    
+    setupCanvas() {
+        const rect = this.canvas.getBoundingClientRect();
+        this.canvas.width = rect.width * 2;
+        this.canvas.height = rect.height * 2;
+        this.ctx.scale(2, 2);
+        
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 2;
+        
+        // Adicionar grade de fundo sutil
+        this.drawGrid();
+    }
+    
+    drawGrid() {
+        const gridSize = 20;
+        this.ctx.strokeStyle = '#f0f0f0';
+        this.ctx.lineWidth = 0.5;
+        
+        for (let i = 0; i < this.canvas.width; i += gridSize) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i, 0);
+            this.ctx.lineTo(i, this.canvas.height);
+            this.ctx.stroke();
+        }
+        
+        for (let i = 0; i < this.canvas.height; i += gridSize) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, i);
+            this.ctx.lineTo(this.canvas.width, i);
+            this.ctx.stroke();
+        }
+        
+        // Resetar estilo para assinatura
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 2;
+    }
+    
+    setupEvents() {
+        // Mouse events
+        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mouseout', () => this.stopDrawing());
+        
+        // Touch events para mobile
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.startDrawing(e.touches[0]);
+        });
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            this.draw(e.touches[0]);
+        });
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.stopDrawing();
+        });
+        
+        // Clear button
+        this.clearBtn.addEventListener('click', () => this.clear());
+    }
+    
+    getPosition(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    startDrawing(e) {
+        this.isDrawing = true;
+        const pos = this.getPosition(e);
+        this.ctx.beginPath();
+        this.ctx.moveTo(pos.x, pos.y);
+    }
+    
+    draw(e) {
+        if (!this.isDrawing) return;
+        
+        const pos = this.getPosition(e);
+        this.ctx.lineTo(pos.x, pos.y);
+        this.ctx.stroke();
+        
+        if (!this.isSigned) {
+            this.isSigned = true;
+            this.updateStatus();
+        }
+    }
+    
+    stopDrawing() {
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            this.saveSignature();
+        }
+    }
+    
+    clear() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.drawGrid(); // Redesenhar a grade
+        this.isSigned = false;
+        this.hiddenInput.value = '';
+        this.updateStatus();
+    }
+    
+    saveSignature() {
+        if (this.isSigned) {
+            const dataURL = this.canvas.toDataURL('image/png');
+            this.hiddenInput.value = dataURL;
+        }
+    }
+    
+    updateStatus() {
+        if (this.isSigned) {
+            this.status.innerHTML = '<i class="bi bi-check-circle me-1"></i>Assinado ✓';
+            this.status.className = 'text-success ms-2';
+            this.canvas.classList.add('canvas-signed');
+        } else {
+            this.status.innerHTML = '<i class="bi bi-x-circle me-1"></i>Não assinado';
+            this.status.className = 'text-muted ms-2';
+            this.canvas.classList.remove('canvas-signed');
+        }
+    }
+}
+
+// Classe principal do sistema
+class FinalizarOSSystem {
+    constructor() {
+        this.init();
+    }
+    
+    init() {
+        this.setupSignatures();
+        this.setupFormValidation();
+        this.setupPhotoPreview();
+        this.setupChecklist();
+        this.autoFillMechanicName();
+        
+        console.log('✅ Sistema de finalização inicializado');
+    }
+    
+    setupSignatures() {
+        this.mechanicPad = new SignaturePad(
+            'mechanicCanvas', 
+            'clearMechanic', 
+            'mechanicStatus', 
+            'mechanicSignature'
+        );
+        
+        this.inspectorPad = new SignaturePad(
+            'inspectorCanvas', 
+            'clearInspector', 
+            'inspectorStatus', 
+            'inspectorSignature'
+        );
+    }
+    
+    setupFormValidation() {
+        const form = document.getElementById('finalizarForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        form.addEventListener('submit', (e) => {
+            if (!this.validateForm()) {
+                e.preventDefault();
+                return false;
+            }
+            
+            if (!confirm('Confirma a finalização da OS? Esta ação não pode ser desfeita.')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            this.setLoading(submitBtn, true);
+        });
+    }
+    
+    validateForm() {
+        const mechanicSigned = document.getElementById('mechanicSignature').value;
+        const inspectorSigned = document.getElementById('inspectorSignature').value;
+        
+        if (!mechanicSigned || !inspectorSigned) {
+            this.showNotification('Por favor, colete ambas as assinaturas antes de finalizar a OS.', 'error');
+            return false;
+        }
+        
+        // Validar checklist
+        const checklistItems = ['graxa_oleo', 'limpeza', 'pecas_soltas', 'equipamento_liberado'];
+        for (let item of checklistItems) {
+            const checked = document.querySelector(`input[name="${item}"]:checked`);
+            if (!checked) {
+                this.showNotification(`Por favor, responda todas as verificações do checklist.`, 'error');
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    setupPhotoPreview() {
+        const input = document.getElementById('fotosInput');
+        const container = document.getElementById('previewContainer');
+        
+        input.addEventListener('change', (e) => {
+            container.innerHTML = '';
+            const files = Array.from(e.target.files);
+            
+            if (files.length > 5) {
+                this.showNotification('Máximo 5 fotos permitidas.', 'warning');
+                e.target.value = '';
+                return;
+            }
+            
+            files.forEach((file, index) => {
+                if (file.size > 5 * 1024 * 1024) {
+                    this.showNotification(`Arquivo ${file.name} é muito grande (máx 5MB).`, 'warning');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.createElement('div');
+                    preview.className = 'photo-preview';
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button type="button" class="remove-photo" onclick="this.parentElement.remove()">×</button>
+                    `;
+                    container.appendChild(preview);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+    
+    setupChecklist() {
+        const checklistItems = ['graxa_oleo', 'limpeza', 'pecas_soltas', 'equipamento_liberado'];
+        
+        checklistItems.forEach(item => {
+            const radios = document.querySelectorAll(`input[name="${item}"]`);
+            radios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    this.updateChecklistSummary();
+                    this.updateQuestionVisualState(item);
+                });
+            });
+        });
+    }
+    
+    updateQuestionVisualState(questionName) {
+        const container = document.querySelector(`input[name="${questionName}"]`).closest('.question-container');
+        const checkedValue = document.querySelector(`input[name="${questionName}"]:checked`)?.value;
+        
+        // Reset classes
+        container.classList.remove('border-success', 'border-danger', 'bg-success-subtle', 'bg-danger-subtle');
+        
+        if (checkedValue === 'sim') {
+            if (questionName === 'limpeza' || questionName === 'equipamento_liberado') {
+                container.classList.add('border-success', 'bg-success-subtle');
+            } else {
+                container.classList.add('border-danger', 'bg-danger-subtle');
+            }
+        } else if (checkedValue === 'nao') {
+            if (questionName === 'limpeza' || questionName === 'equipamento_liberado') {
+                container.classList.add('border-danger', 'bg-danger-subtle');
+            } else {
+                container.classList.add('border-success', 'bg-success-subtle');
+            }
+        }
+    }
+    
+    updateChecklistSummary() {
+        const summary = document.getElementById('checklistSummary');
+        const items = [
+            { name: 'graxa_oleo', label: 'Graxa/Óleo', goodValue: 'nao' },
+            { name: 'limpeza', label: 'Limpeza', goodValue: 'sim' },
+            { name: 'pecas_soltas', label: 'Peças Soltas', goodValue: 'nao' },
+            { name: 'equipamento_liberado', label: 'Equipamento Liberado', goodValue: 'sim' }
+        ];
+        
+        let html = '<div class="row">';
+        let allGood = true;
+        let problemsFound = [];
+        
+        items.forEach(item => {
+            const checked = document.querySelector(`input[name="${item.name}"]:checked`);
+            if (checked) {
+                const isGood = checked.value === item.goodValue;
+                const icon = isGood ? 'bi-check-circle text-success' : 'bi-x-circle text-danger';
+                const status = checked.value === 'sim' ? 'SIM' : 'NÃO';
+                const statusClass = isGood ? 'text-success' : 'text-danger';
+                
+                if (!isGood) {
+                    allGood = false;
+                    // Adicionar à lista de problemas
+                    let problemText = '';
+                    if (item.name === 'graxa_oleo' && checked.value === 'sim') {
+                        problemText = 'Há vazamento de graxa/óleo!';
+                    } else if (item.name === 'limpeza' && checked.value === 'nao') {
+                        problemText = 'Limpeza não foi realizada!';
+                    } else if (item.name === 'pecas_soltas' && checked.value === 'sim') {
+                        problemText = 'Existem peças soltas!';
+                    } else if (item.name === 'equipamento_liberado' && checked.value === 'nao') {
+                        problemText = 'Equipamento NÃO liberado para operação!';
+                    }
+                    if (problemText) problemsFound.push(problemText);
+                }
+                
+                html += `
+                    <div class="col-md-3 mb-2">
+                        <small>
+                            <i class="bi ${icon} me-1"></i>
+                            <strong>${item.label}:</strong> 
+                            <span class="${statusClass} fw-bold">${status}</span>
+                        </small>
+                    </div>
+                `;
+            }
+        });
+        
+        html += '</div>';
+        
+        // Mostrar resultado final
+        if (allGood && items.every(item => document.querySelector(`input[name="${item.name}"]:checked`))) {
+            html += '<div class="alert alert-success mt-2 mb-0"><i class="bi bi-check-circle me-2"></i><strong>✅ Todas as verificações estão OK! Equipamento liberado.</strong></div>';
+        } else if (problemsFound.length > 0) {
+            html += '<div class="alert alert-danger mt-2 mb-0">';
+            html += '<i class="bi bi-exclamation-triangle me-2"></i><strong>⚠️ Problemas encontrados:</strong><ul class="mb-0 mt-2">';
+            problemsFound.forEach(problem => {
+                html += `<li>${problem}</li>`;
+            });
+            html += '</ul></div>';
+        } else {
+            html += '<div class="alert alert-warning mt-2 mb-0"><i class="bi bi-clock me-2"></i><strong>Complete todas as verificações para ver o resultado.</strong></div>';
+        }
+        
+        summary.innerHTML = html;
+    }
+    
+    autoFillMechanicName() {
+        // Preencher automaticamente o nome do mecânico baseado na seleção
+        const mecanicoSelect = document.querySelector('select[name="mecanico_responsavel"]');
+        const nomeInput = document.querySelector('input[name="nome_mecanico"]');
+        
+        if (mecanicoSelect && nomeInput) {
+            mecanicoSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.value && selectedOption.text !== 'Selecione um mecânico') {
+                    nomeInput.value = selectedOption.text;
+                }
+            });
+            
+            // Auto-preencher se já há uma seleção
+            if (mecanicoSelect.value) {
+                const selectedOption = mecanicoSelect.options[mecanicoSelect.selectedIndex];
+                if (selectedOption.text !== 'Selecione um mecânico') {
+                    nomeInput.value = selectedOption.text;
+                }
+            }
+        }
+    }
+    
+    setLoading(button, loading) {
+        if (loading) {
+            button.disabled = true;
+            button.classList.add('btn-loading');
+            button.setAttribute('data-original-text', button.innerHTML);
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Finalizando...';
+        } else {
+            button.disabled = false;
+            button.classList.remove('btn-loading');
+            button.innerHTML = button.getAttribute('data-original-text') || button.innerHTML;
+        }
+    }
+    
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 400px; max-width: 500px;';
+        
+        const icons = {
+            success: 'bi-check-circle-fill',
+            error: 'bi-exclamation-triangle-fill',
+            warning: 'bi-exclamation-circle-fill',
+            info: 'bi-info-circle-fill'
+        };
+        
+        notification.innerHTML = `
+            <i class="bi ${icons[type]} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+}
+
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    window.finalizarOSSystem = new FinalizarOSSystem();
+});
+</script>
+{% endblock %}

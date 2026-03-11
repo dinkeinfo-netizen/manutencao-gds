@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Manutenções em Andamento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Manutenções em Andamento – RQ MAN – 073 01</h2>
+    
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{{ url_for('main.lancar_os') }}" class="btn btn-primary">Lançar OS</a>
+        <a href="{{ url_for('main.manutencoes_concluidas') }}" class="btn btn-secondary">Ver Concluídas</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>OS</th>
+                    <th>Solicitante</th>
+                    <th>Localização</th>
+                    <th>Equipamento</th>
+                    <th>Início</th>
+                    <th>Tempo</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for os in ordens %}
+                <tr>
+                    <td>{{ os.numero_os }}</td>
+                    <td>{{ os.solicitante }}</td>
+                    <td>{{ os.localizacao.nome if os.localizacao else 'N/A' }}</td>
+                    <td>{{ os.equipamento.nome if os.equipamento else 'N/A' }}</td>
+                    <td>{{ os.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ os.tempo_decorrido|int }}h-{{ (os.tempo_decorrido * 60 % 60)|int }}m</td>
+                    <td>
+                        <span class="badge bg-{% if os.status == 'Aberta' %}info{% elif os.status == 'Em andamento' %}warning{% else %}success{% endif %}">
+                            {{ os.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if os.status == 'Aberta' %}
+                            <form action="{{ url_for('main.iniciar_os', os_id=os.id) }}" method="POST" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-warning btn-sm">Iniciar</button>
+                            </form>
+                        {% elif os.status == 'Em andamento' %}
+                            <form action="{{ url_for('main.finalizar_os', os_id=os.id) }}" method="GET" style="display: inline;">
+                                <button type="submit" class="btn btn-success btn-sm">Finalizar</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4">Nenhuma OS em andamento.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

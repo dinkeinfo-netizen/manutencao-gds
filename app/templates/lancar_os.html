@@ -1,0 +1,1698 @@
+{% extends "base.html" %}
+
+{% block title %}Lançar OS{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-plus-circle me-3"></i>
+                        Nova Ordem de Serviço
+                    </h1>
+                    <p class="page-subtitle mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Preencha as informações para criar uma nova OS
+                    </p>
+                </div>
+                <div class="page-actions">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </a>
+                    <button type="button" class="btn btn-outline-info" onclick="showHelp()">
+                        <i class="fas fa-question-circle me-2"></i>Ajuda
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Wizard -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="wizard-container">
+            <div class="wizard-progress">
+                <div class="wizard-step active" data-step="1">
+                    <div class="step-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="step-label">Solicitante</div>
+                </div>
+                <div class="wizard-step" data-step="2">
+                    <div class="step-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="step-label">Localização</div>
+                </div>
+                <div class="wizard-step" data-step="3">
+                    <div class="step-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="step-label">Equipamento</div>
+                </div>
+                <div class="wizard-step" data-step="4">
+                    <div class="step-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="step-label">Detalhes</div>
+                </div>
+                <div class="wizard-step" data-step="5">
+                    <div class="step-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="step-label">Confirmar</div>
+                </div>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="wizardProgress"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Container -->
+<div class="row">
+    <div class="col-12">
+        <div class="form-container">
+            <form method="POST" id="osForm" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <!-- Step 1: Solicitante -->
+                <div class="form-step active" id="step1">
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h3 class="step-title">
+                                <i class="fas fa-user me-2 text-primary"></i>
+                                Informações do Solicitante
+                            </h3>
+                            <p class="step-description">Quem está solicitando a manutenção?</p>
+                        </div>
+                        
+                        <div class="step-body">
+                            <div class="form-group-enhanced">
+                                <label class="form-label-enhanced">
+                                    <i class="fas fa-user me-2"></i>
+                                    Nome do Solicitante
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.solicitante(class="form-control-enhanced", placeholder="Digite o nome completo do solicitante", autocomplete="name") }}
+                                <div class="field-feedback">
+                                    <div class="invalid-feedback">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        Nome do solicitante é obrigatório
+                                    </div>
+                                    <div class="valid-feedback">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Perfeito!
+                                    </div>
+                                </div>
+                                <small class="form-hint">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Dica: Use o nome completo para facilitar a identificação
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Localização -->
+                <div class="form-step" id="step2">
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h3 class="step-title">
+                                <i class="fas fa-map-marker-alt me-2 text-success"></i>
+                                Localização da Manutenção
+                            </h3>
+                            <p class="step-description">Onde será realizada a manutenção?</p>
+                        </div>
+                        
+                        <div class="step-body">
+                            <div class="form-group-enhanced">
+                                <label class="form-label-enhanced">
+                                    <i class="fas fa-building me-2"></i>
+                                    Localização/Área
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.localizacao_id(class="form-select-enhanced") }}
+                                <div class="field-feedback">
+                                    <div class="invalid-feedback">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        Selecione uma localização
+                                    </div>
+                                    <div class="valid-feedback">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Localização selecionada!
+                                    </div>
+                                </div>
+                                <small class="form-hint">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Escolha a área específica onde está o equipamento
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Equipamento -->
+                <div class="form-step" id="step3">
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h3 class="step-title">
+                                <i class="fas fa-tools me-2 text-info"></i>
+                                Equipamento a ser Mantido
+                            </h3>
+                            <p class="step-description">Qual equipamento precisa de manutenção?</p>
+                        </div>
+                        
+                        <div class="step-body">
+                            <div class="form-group-enhanced">
+                                <label class="form-label-enhanced">
+                                    <i class="fas fa-cog me-2"></i>
+                                    Equipamento
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.equipamento_id(class="form-select-enhanced") }}
+                                <div class="field-feedback">
+                                    <div class="invalid-feedback">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        Selecione um equipamento
+                                    </div>
+                                    <div class="valid-feedback">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Equipamento selecionado!
+                                    </div>
+                                </div>
+                                <small class="form-hint">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Os equipamentos são filtrados pela localização selecionada
+                                </small>
+                                
+                                <!-- Loading indicator -->
+                                <div id="equipmentLoading" class="loading-container" style="display: none;">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                        Carregando equipamentos...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Detalhes -->
+                <div class="form-step" id="step4">
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h3 class="step-title">
+                                <i class="fas fa-cogs me-2 text-warning"></i>
+                                Detalhes da Manutenção
+                            </h3>
+                            <p class="step-description">Especifique o tipo e motivo da manutenção</p>
+                        </div>
+                        
+                        <div class="step-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-group-enhanced">
+                                        <label class="form-label-enhanced">
+                                            <i class="fas fa-wrench me-2"></i>
+                                            Tipo de Manutenção
+                                            <span class="required">*</span>
+                                        </label>
+                                        {{ form.tipo_manutencao(class="form-select-enhanced") }}
+                                        <div class="field-feedback">
+                                            <div class="invalid-feedback">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                Selecione o tipo de manutenção
+                                            </div>
+                                            <div class="valid-feedback">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                Tipo selecionado!
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-group-enhanced">
+                                        <label class="form-label-enhanced">
+                                            <i class="fas fa-pause-circle me-2"></i>
+                                            Tipo de Parada
+                                            <span class="required">*</span>
+                                        </label>
+                                        {{ form.tipo_parada(class="form-select-enhanced") }}
+                                        <div class="field-feedback">
+                                            <div class="invalid-feedback">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                Selecione o tipo de parada
+                                            </div>
+                                            <div class="valid-feedback">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                Tipo selecionado!
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group-enhanced">
+                                <label class="form-label-enhanced">
+                                    <i class="fas fa-clipboard-list me-2"></i>
+                                    Motivo da Quebra/Manutenção
+                                    <span class="required">*</span>
+                                </label>
+                                {{ form.motivo(class="form-control-enhanced", rows=4, placeholder="Descreva detalhadamente o problema ou motivo da manutenção...") }}
+                                <div class="field-feedback">
+                                    <div class="invalid-feedback">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        Descrição do motivo é obrigatória
+                                    </div>
+                                    <div class="valid-feedback">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Descrição adequada!
+                                    </div>
+                                </div>
+                                <div class="character-counter">
+                                    <span id="motivoCounter">0</span> / 500 caracteres
+                                </div>
+                                <small class="form-hint">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Seja específico: inclua sintomas, localização exata do problema, etc.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Confirmar -->
+                <div class="form-step" id="step5">
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h3 class="step-title">
+                                <i class="fas fa-check me-2 text-success"></i>
+                                Confirmar Ordem de Serviço
+                            </h3>
+                            <p class="step-description">Revise as informações antes de criar a OS</p>
+                        </div>
+                        
+                        <div class="step-body">
+                            <div class="confirmation-card">
+                                <div class="confirmation-header">
+                                    <h5>
+                                        <i class="fas fa-clipboard-check me-2"></i>
+                                        Resumo da OS
+                                    </h5>
+                                </div>
+                                
+                                <div class="confirmation-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="summary-item">
+                                                <div class="summary-label">
+                                                    <i class="fas fa-user me-2 text-primary"></i>
+                                                    Solicitante
+                                                </div>
+                                                <div class="summary-value" id="confirmSolicitante">-</div>
+                                            </div>
+                                            
+                                            <div class="summary-item">
+                                                <div class="summary-label">
+                                                    <i class="fas fa-map-marker-alt me-2 text-success"></i>
+                                                    Localização
+                                                </div>
+                                                <div class="summary-value" id="confirmLocalizacao">-</div>
+                                            </div>
+                                            
+                                            <div class="summary-item">
+                                                <div class="summary-label">
+                                                    <i class="fas fa-tools me-2 text-info"></i>
+                                                    Equipamento
+                                                </div>
+                                                <div class="summary-value" id="confirmEquipamento">-</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="summary-item">
+                                                <div class="summary-label">
+                                                    <i class="fas fa-wrench me-2 text-warning"></i>
+                                                    Tipo Manutenção
+                                                </div>
+                                                <div class="summary-value" id="confirmTipoManutencao">-</div>
+                                            </div>
+                                            
+                                            <div class="summary-item">
+                                                <div class="summary-label">
+                                                    <i class="fas fa-pause-circle me-2 text-secondary"></i>
+                                                    Tipo Parada
+                                                </div>
+                                                <div class="summary-value" id="confirmTipoParada">-</div>
+                                            </div>
+                                            
+                                            <div class="summary-item">
+                                                <div class="summary-label">
+                                                    <i class="fas fa-calendar me-2 text-primary"></i>
+                                                    Data Criação
+                                                </div>
+                                                <div class="summary-value" id="confirmDataCriacao">-</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="summary-item full-width">
+                                        <div class="summary-label">
+                                            <i class="fas fa-clipboard-list me-2 text-dark"></i>
+                                            Motivo/Descrição
+                                        </div>
+                                        <div class="summary-value motivo" id="confirmMotivo">-</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="confirmation-footer">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Importante:</strong> Após criar a OS, ela receberá um número único e poderá ser acompanhada no dashboard.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="form-navigation">
+                    <button type="button" class="btn btn-outline-secondary" id="prevBtn" style="display: none;">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Anterior
+                    </button>
+                    
+                    <div class="flex-grow-1"></div>
+                    
+                    <button type="button" class="btn btn-primary" id="nextBtn">
+                        Próximo
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                    
+                    <button type="submit" class="btn btn-success" id="submitBtn" data-custom-handler="true" style="display: none;">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Criar OS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal Customizado SEM Bootstrap -->
+<div id="helpModal" class="help-modal-overlay" style="display: none;">
+    <div class="help-modal-box">
+        <div class="help-modal-header">
+            <h5>
+                <i class="fas fa-question-circle me-2"></i>
+                Ajuda - Nova Ordem de Serviço
+            </h5>
+            <button type="button" class="help-btn-close" onclick="closeHelp()">
+                ×
+            </button>
+        </div>
+        <div class="help-modal-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="help-section-title">
+                        <i class="fas fa-list-ol me-2"></i>
+                        Passos do Formulário
+                    </h6>
+                    <ol class="help-list">
+                        <li><strong>Solicitante:</strong> Nome de quem está solicitando</li>
+                        <li><strong>Localização:</strong> Área onde está o equipamento</li>
+                        <li><strong>Equipamento:</strong> Máquina/equipamento específico</li>
+                        <li><strong>Detalhes:</strong> Tipo e motivo da manutenção</li>
+                        <li><strong>Confirmar:</strong> Revisar e criar a OS</li>
+                    </ol>
+                    
+                    <h6 class="help-section-title success">
+                        <i class="fas fa-keyboard me-2"></i>
+                        Atalhos
+                    </h6>
+                    <ul class="help-list">
+                        <li><kbd>Tab</kbd> Próximo campo</li>
+                        <li><kbd>Shift + Tab</kbd> Campo anterior</li>
+                        <li><kbd>Enter</kbd> Próximo passo</li>
+                        <li><kbd>Esc</kbd> Fechar modal</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="help-section-title warning">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Dicas Importantes
+                    </h6>
+                    <ul class="help-list">
+                        <li>Use nomes completos para facilitar a identificação</li>
+                        <li>Seja específico na descrição do problema</li>
+                        <li>Selecione primeiro a localização para ver os equipamentos</li>
+                        <li>Todos os campos marcados com * são obrigatórios</li>
+                        <li>Você pode voltar aos passos anteriores para corrigir</li>
+                    </ul>
+                    
+                    <h6 class="help-section-title danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Problemas Comuns
+                    </h6>
+                    <ul class="help-list">
+                        <li><strong>Equipamentos não aparecem:</strong> Verifique se selecionou a localização</li>
+                        <li><strong>Não consegue avançar:</strong> Preencha todos os campos obrigatórios</li>
+                        <li><strong>Formulário não envia:</strong> Revise todos os dados no último passo</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="help-modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeHelp()">
+                <i class="fas fa-times me-2"></i>
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* === ESTILOS ORIGINAIS (mantidos) === */
+/* Page Header */
+.page-header {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 100%);
+    padding: 2rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.page-actions .btn {
+    border-radius: 2rem;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    margin-left: 0.5rem;
+}
+
+/* Wizard Progress */
+.wizard-container {
+    background: rgba(255,255,255,0.95);
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.wizard-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.wizard-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1;
+    transition: all 0.3s ease;
+}
+
+.wizard-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 25px;
+    left: 60%;
+    width: 80%;
+    height: 2px;
+    background: #e9ecef;
+    z-index: 1;
+}
+
+.wizard-step.active::after,
+.wizard-step.completed::after {
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.step-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+    border: 3px solid #e9ecef;
+}
+
+.wizard-step.active .step-icon {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.wizard-step.completed .step-icon {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.step-label {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6c757d;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.wizard-step.active .step-label {
+    color: #007bff;
+    font-weight: 600;
+    transform: scale(1.05);
+}
+
+.wizard-step.completed .step-label {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    position: relative;
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #28a745);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    width: 0%;
+}
+
+/* Form Container */
+.form-container {
+    background: rgba(255,255,255,0.95);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.form-step {
+    display: none;
+    padding: 3rem;
+    min-height: 400px;
+}
+
+.form-step.active {
+    display: block;
+    animation: slideInRight 0.4s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.step-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.step-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.step-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.step-description {
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.step-body {
+    margin: 0 auto;
+}
+
+/* Enhanced Form Controls */
+.form-group-enhanced {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.form-label-enhanced {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.required {
+    color: #e74c3c;
+    margin-left: 0.25rem;
+}
+
+.form-control-enhanced,
+.form-select-enhanced {
+    border: 2px solid #e9ecef;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(5px);
+}
+
+.form-control-enhanced:focus,
+.form-select-enhanced:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+    background: rgba(255,255,255,1);
+    transform: translateY(-2px);
+}
+
+.form-control-enhanced.is-valid,
+.form-select-enhanced.is-valid {
+    border-color: #28a745;
+    background-image: none;
+}
+
+.form-control-enhanced.is-invalid,
+.form-select-enhanced.is-invalid {
+    border-color: #dc3545;
+    background-image: none;
+}
+
+.field-feedback {
+    margin-top: 0.5rem;
+}
+
+.invalid-feedback,
+.valid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+}
+
+.valid-feedback {
+    color: #28a745;
+}
+
+.form-control-enhanced.is-invalid ~ .field-feedback .invalid-feedback,
+.form-select-enhanced.is-invalid ~ .field-feedback .invalid-feedback {
+    display: block;
+}
+
+.form-control-enhanced.is-valid ~ .field-feedback .valid-feedback,
+.form-select-enhanced.is-valid ~ .field-feedback .valid-feedback {
+    display: block;
+}
+
+.form-hint {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+.character-counter {
+    position: absolute;
+    right: 1rem;
+    bottom: 0.5rem;
+    font-size: 0.75rem;
+    color: #6c757d;
+    background: rgba(255,255,255,0.9);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Loading States */
+.loading-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    text-align: center;
+    background: rgba(0, 123, 255, 0.1);
+    border-radius: 0.5rem;
+    border: 1px dashed #007bff;
+}
+
+.loading-spinner {
+    color: #007bff;
+    font-weight: 500;
+}
+
+/* Confirmation Card */
+.confirmation-card {
+    background: linear-gradient(135deg, rgba(248, 249, 250, 0.9) 0%, rgba(255,255,255,0.9) 100%);
+    border-radius: 1rem;
+    border: 1px solid rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.confirmation-header {
+    background: linear-gradient(135deg, #007bff 0%, #28a745 100%);
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.confirmation-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.confirmation-body {
+    padding: 2rem;
+}
+
+.summary-item {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.summary-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.summary-item:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.summary-label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.summary-value {
+    font-size: 1.1rem;
+    color: #495057;
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.7);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.summary-value.motivo {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.confirmation-footer {
+    padding: 1.5rem 2rem;
+    background: rgba(255,255,255,0.5);
+}
+
+/* Form Navigation */
+.form-navigation {
+    display: flex;
+    align-items: center;
+    padding: 2rem 3rem;
+    background: linear-gradient(135deg, rgba(248, 249, 250, 0.9) 0%, rgba(255,255,255,0.9) 100%);
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.form-navigation .btn {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: 2rem;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+}
+
+.form-navigation .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* === NOVO: Modal de Ajuda Customizado === */
+.help-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(3px);
+}
+
+.help-modal-box {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: helpModalFadeIn 0.3s ease;
+}
+
+@keyframes helpModalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.help-modal-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+    color: white;
+    padding: 20px 25px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.help-modal-header h5 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.help-btn-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    padding: 0;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.help-btn-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.help-modal-body {
+    padding: 30px;
+    line-height: 1.6;
+}
+
+.help-section-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 8px;
+}
+
+.help-section-title.success {
+    color: #28a745;
+    border-bottom-color: #28a745;
+}
+
+.help-section-title.warning {
+    color: #ffc107;
+    border-bottom-color: #ffc107;
+}
+
+.help-section-title.danger {
+    color: #dc3545;
+    border-bottom-color: #dc3545;
+}
+
+.help-list {
+    padding-left: 20px;
+    margin-bottom: 25px;
+}
+
+.help-list li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.help-list li strong {
+    color: #2c3e50;
+}
+
+.help-modal-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    border-radius: 0 0 12px 12px;
+    text-align: right;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+kbd {
+    background-color: #212529;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #495057;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive Design para Modal */
+@media (max-width: 768px) {
+    .help-modal-box {
+        width: 95%;
+        margin: 10px;
+        max-height: 95vh;
+    }
+    
+    .help-modal-header {
+        padding: 15px 20px;
+    }
+    
+    .help-modal-header h5 {
+        font-size: 1.1rem;
+    }
+    
+    .help-modal-body {
+        padding: 20px;
+    }
+    
+    .help-modal-body .row {
+        flex-direction: column;
+    }
+    
+    .help-modal-body .col-md-6 {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .help-modal-footer {
+        padding: 15px 20px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .page-actions,
+    .wizard-container,
+    .form-navigation {
+        display: none !important;
+    }
+    
+    .form-container {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .form-step {
+        display: block !important;
+        page-break-inside: avoid;
+    }
+    
+    .help-modal-overlay {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+console.log('🚀 Iniciando lançar OS com modal customizado...');
+
+// === FUNÇÕES DO MODAL DE AJUDA CUSTOMIZADO ===
+function showHelp() {
+    console.log('❓ Abrindo modal de ajuda customizado');
+    const modal = document.getElementById('helpModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Focar no botão fechar para acessibilidade
+        setTimeout(() => {
+            const closeBtn = document.querySelector('.help-btn-close');
+            if (closeBtn) closeBtn.focus();
+        }, 100);
+    } else {
+        console.error('❌ Modal de ajuda não encontrado');
+    }
+}
+
+function closeHelp() {
+    console.log('❌ Fechando modal de ajuda');
+    const modal = document.getElementById('helpModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Event listeners para o modal customizado
+document.addEventListener('DOMContentLoaded', function() {
+    const helpModal = document.getElementById('helpModal');
+    
+    if (helpModal) {
+        // Fechar com ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && helpModal.style.display === 'flex') {
+                closeHelp();
+            }
+        });
+        
+        // Fechar clicando fora do modal
+        helpModal.addEventListener('click', function(e) {
+            if (e.target === helpModal) {
+                closeHelp();
+            }
+        });
+        
+        console.log('✅ Modal de ajuda customizado configurado');
+    }
+});
+
+// === CLASSE PRINCIPAL DO WIZARD (original) ===
+class OSWizard {
+    constructor() {
+        this.currentStep = 1;
+        this.totalSteps = 5;
+        this.formData = {};
+        this.locationChangeHandler = null;
+        
+        this.init();
+    }
+    
+    init() {
+        this.cleanup();
+        this.setupEventListeners();
+        this.updateProgress();
+        this.updateDateDisplay();
+        this.setupFormValidation();
+        this.setupCharacterCounter();
+        this.setupLocationEquipmentLink();
+        this.initializeTooltips();
+        this.initializeEquipmentField();
+        this.setupDebugMode();
+    }
+    
+    cleanup() {
+        const locationSelect = document.getElementById('localizacao_id');
+        if (locationSelect && this.locationChangeHandler) {
+            locationSelect.removeEventListener('change', this.locationChangeHandler);
+        }
+        
+        const equipmentSelect = document.getElementById('equipamento_id');
+        if (equipmentSelect) {
+            equipmentSelect.disabled = false;
+            equipmentSelect.classList.remove('is-valid', 'is-invalid');
+        }
+        
+        const notifications = document.querySelectorAll('.alert.position-fixed');
+        notifications.forEach(notif => notif.remove());
+        
+        console.log('🧹 Estado anterior limpo');
+    }
+    
+    setupDebugMode() {
+        window.osWizardDebug = {
+            instance: this,
+            checkState: () => {
+                const locationSelect = document.getElementById('localizacao_id');
+                const equipmentSelect = document.getElementById('equipamento_id');
+                
+                console.log('🔍 Debug State:', {
+                    currentStep: this.currentStep,
+                    locationValue: locationSelect?.value,
+                    equipmentDisabled: equipmentSelect?.disabled,
+                    equipmentOptions: equipmentSelect?.options.length,
+                    hasLocationHandler: !!this.locationChangeHandler
+                });
+            },
+            forceEnable: () => {
+                const equipmentSelect = document.getElementById('equipamento_id');
+                if (equipmentSelect) {
+                    equipmentSelect.disabled = false;
+                    console.log('✅ Equipment field forcefully enabled');
+                }
+            }
+        };
+    }
+    
+    initializeEquipmentField() {
+        const equipmentSelect = document.getElementById('equipamento_id');
+        const locationSelect = document.getElementById('localizacao_id');
+        
+        if (equipmentSelect && locationSelect) {
+            equipmentSelect.disabled = false;
+            
+            if (!locationSelect.value || locationSelect.value === '') {
+                equipmentSelect.disabled = true;
+                equipmentSelect.innerHTML = '<option value="">Selecione primeiro uma localização</option>';
+                console.log('🔒 Equipment field disabled - no location selected');
+            } else {
+                console.log('🔓 Location already selected, loading equipment...');
+                this.loadEquipmentForLocation(locationSelect.value);
+            }
+        }
+    }
+    
+    setupEventListeners() {
+        document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
+        document.getElementById('prevBtn').addEventListener('click', () => this.prevStep());
+        document.getElementById('osForm').addEventListener('submit', (e) => this.handleSubmit(e));
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    this.nextStep();
+                }
+            }
+        });
+        
+        const formFields = document.querySelectorAll('.form-control-enhanced, .form-select-enhanced');
+        formFields.forEach(field => {
+            field.addEventListener('blur', () => this.validateField(field));
+            field.addEventListener('input', () => this.clearFieldError(field));
+        });
+    }
+    
+    setupLocationEquipmentLink() {
+        const locationSelect = document.getElementById('localizacao_id');
+        const equipmentSelect = document.getElementById('equipamento_id');
+        
+        if (!locationSelect || !equipmentSelect) {
+            console.error('❌ Location or Equipment select not found');
+            return;
+        }
+        
+        this.locationChangeHandler = async (event) => {
+            const locId = event.target.value;
+            console.log('🔄 Location changed to:', locId);
+            
+            if (!locId || locId === '') {
+                equipmentSelect.disabled = true;
+                equipmentSelect.innerHTML = '<option value="">Selecione primeiro uma localização</option>';
+                equipmentSelect.classList.remove('is-valid', 'is-invalid');
+                console.log('🔒 Equipment disabled - empty location');
+                return;
+            }
+            
+            await this.loadEquipmentForLocation(locId);
+        };
+        
+        locationSelect.addEventListener('change', this.locationChangeHandler);
+        console.log('✅ Location-Equipment link configured');
+    }
+    
+    async loadEquipmentForLocation(locId) {
+        const equipmentSelect = document.getElementById('equipamento_id');
+        const locationSelect = document.getElementById('localizacao_id');
+        const loadingDiv = document.getElementById('equipmentLoading');
+        
+        if (!equipmentSelect) return;
+        
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        equipmentSelect.disabled = true;
+        equipmentSelect.innerHTML = '<option value="">Carregando equipamentos...</option>';
+        
+        try {
+            let equipments = [];
+            
+            try {
+                const response = await fetch(`/api/equipamentos/${locId}`);
+                if (response.ok) {
+                    equipments = await response.json();
+                    console.log('📡 Equipments loaded via API:', equipments.length);
+                }
+            } catch (apiError) {
+                console.log('⚠️ API not available, using fallback');
+            }
+            
+            equipmentSelect.innerHTML = '<option value="">Selecione um equipamento</option>';
+            
+            if (equipments.length > 0) {
+                equipments.forEach(equip => {
+                    const option = document.createElement('option');
+                    option.value = equip.id;
+                    option.textContent = `${equip.codigo} - ${equip.nome}`;
+                    equipmentSelect.appendChild(option);
+                });
+            } else {
+                const sampleEquipments = [
+                    { id: '1', codigo: 'PRO-MANAGS-006', nome: 'AGITADOR MECÂNICO 1' },
+                    { id: '2', codigo: 'PRO-MANAGS-007', nome: 'AGITADOR MECÂNICO 2' },
+                    { id: '3', codigo: 'PRO-BOMB-001', nome: 'BOMBA CENTRÍFUGA' },
+                    { id: '4', codigo: 'PRO-COMP-001', nome: 'COMPRESSOR DE AR' }
+                ];
+                
+                sampleEquipments.forEach(equip => {
+                    const option = document.createElement('option');
+                    option.value = equip.id;
+                    option.textContent = `${equip.codigo} - ${equip.nome}`;
+                    equipmentSelect.appendChild(option);
+                });
+                
+                console.log('🔧 Sample equipments added');
+            }
+            
+            equipmentSelect.disabled = false;
+            
+            setTimeout(() => {
+                if (locationSelect) {
+                    locationSelect.classList.remove('is-invalid');
+                    locationSelect.classList.add('is-valid');
+                }
+            }, 100);
+            
+            console.log('✅ Equipment field enabled with', equipmentSelect.options.length - 1, 'options');
+            
+        } catch (error) {
+            console.error('❌ Error loading equipments:', error);
+            equipmentSelect.innerHTML = '<option value="">Erro ao carregar equipamentos</option>';
+            equipmentSelect.disabled = false;
+            this.showNotification('Erro ao carregar equipamentos. Tente novamente.', 'error');
+        } finally {
+            if (loadingDiv) loadingDiv.style.display = 'none';
+        }
+    }
+    
+    setupFormValidation() {
+        const requiredFields = {
+            1: ['solicitante'],
+            2: ['localizacao_id'],
+            3: ['equipamento_id'],
+            4: ['tipo_manutencao', 'tipo_parada', 'motivo']
+        };
+        
+        this.requiredFields = requiredFields;
+    }
+    
+    setupCharacterCounter() {
+        const motivoField = document.getElementById('motivo');
+        const counter = document.getElementById('motivoCounter');
+        
+        if (motivoField && counter) {
+            motivoField.addEventListener('input', function() {
+                const length = this.value.length;
+                counter.textContent = length;
+                
+                if (length > 450) {
+                    counter.style.color = '#dc3545';
+                } else if (length > 300) {
+                    counter.style.color = '#ffc107';
+                } else {
+                    counter.style.color = '#6c757d';
+                }
+            });
+        }
+    }
+    
+    validateField(field) {
+        const value = field.value.trim();
+        const isRequired = field.hasAttribute('required') || field.closest('.form-group-enhanced').querySelector('.required');
+        
+        field.classList.remove('is-valid', 'is-invalid');
+        
+        if (isRequired && !value) {
+            field.classList.add('is-invalid');
+            return false;
+        }
+        
+        if (field.id === 'solicitante' && value.length < 3) {
+            field.classList.add('is-invalid');
+            return false;
+        }
+        
+        if (field.id === 'motivo' && value.length < 10) {
+            field.classList.add('is-invalid');
+            return false;
+        }
+        
+        field.classList.add('is-valid');
+        return true;
+    }
+    
+    clearFieldError(field) {
+        if (field.classList.contains('is-invalid')) {
+            field.classList.remove('is-invalid');
+        }
+    }
+    
+    validateStep(step) {
+        const requiredFields = this.requiredFields[step] || [];
+        let isValid = true;
+        
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && !this.validateField(field)) {
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+    
+    nextStep() {
+        if (this.currentStep < this.totalSteps) {
+            if (!this.validateStep(this.currentStep)) {
+                this.showNotification('Por favor, preencha todos os campos obrigatórios.', 'warning');
+                return;
+            }
+            
+            this.saveStepData();
+            this.currentStep++;
+            this.updateStep();
+            this.updateProgress();
+            
+            if (this.currentStep === 5) {
+                this.updateConfirmation();
+            }
+            
+            this.showNotification('Passo concluído com sucesso!', 'success');
+        }
+    }
+    
+    prevStep() {
+        if (this.currentStep > 1) {
+            this.currentStep--;
+            this.updateStep();
+            this.updateProgress();
+        }
+    }
+    
+    updateStep() {
+        document.querySelectorAll('.form-step').forEach(step => {
+            step.classList.remove('active');
+        });
+        
+        document.getElementById(`step${this.currentStep}`).classList.add('active');
+        
+        document.querySelectorAll('.wizard-step').forEach((step, index) => {
+            step.classList.remove('active', 'completed');
+            
+            if (index + 1 < this.currentStep) {
+                step.classList.add('completed');
+            } else if (index + 1 === this.currentStep) {
+                step.classList.add('active');
+            }
+        });
+        
+        document.getElementById('prevBtn').style.display = this.currentStep > 1 ? 'block' : 'none';
+        document.getElementById('nextBtn').style.display = this.currentStep < this.totalSteps ? 'block' : 'none';
+        document.getElementById('submitBtn').style.display = this.currentStep === this.totalSteps ? 'block' : 'none';
+        
+        if (this.currentStep === 3) {
+            setTimeout(() => {
+                this.initializeEquipmentField();
+            }, 100);
+        }
+        
+        setTimeout(() => {
+            const firstField = document.querySelector(`#step${this.currentStep} .form-control-enhanced, #step${this.currentStep} .form-select-enhanced`);
+            if (firstField && !firstField.disabled) {
+                firstField.focus();
+            }
+        }, 100);
+    }
+    
+    updateProgress() {
+        const progress = ((this.currentStep - 1) / (this.totalSteps - 1)) * 100;
+        document.getElementById('wizardProgress').style.width = `${progress}%`;
+    }
+    
+    updateDateDisplay() {
+        const now = new Date();
+        const options = { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        document.getElementById('confirmDataCriacao').textContent = 
+            now.toLocaleDateString('pt-BR', options);
+    }
+    
+    saveStepData() {
+        const currentStepEl = document.getElementById(`step${this.currentStep}`);
+        const fields = currentStepEl.querySelectorAll('.form-control-enhanced, .form-select-enhanced');
+        
+        fields.forEach(field => {
+            this.formData[field.id] = field.value;
+        });
+    }
+    
+    updateConfirmation() {
+        const mappings = {
+            'confirmSolicitante': 'solicitante',
+            'confirmLocalizacao': 'localizacao_id',
+            'confirmEquipamento': 'equipamento_id',
+            'confirmTipoManutencao': 'tipo_manutencao',
+            'confirmTipoParada': 'tipo_parada',
+            'confirmMotivo': 'motivo'
+        };
+        
+        Object.entries(mappings).forEach(([confirmId, fieldId]) => {
+            const field = document.getElementById(fieldId);
+            const confirmEl = document.getElementById(confirmId);
+            
+            if (field && confirmEl) {
+                let value = field.value;
+                
+                if (field.tagName === 'SELECT' && field.selectedIndex > 0) {
+                    value = field.options[field.selectedIndex].text;
+                }
+                
+                confirmEl.textContent = value || '-';
+            }
+        });
+    }
+    
+    handleSubmit(e) {
+        if (this.currentStep !== this.totalSteps) {
+            e.preventDefault();
+            return;
+        }
+        
+        let allValid = true;
+        for (let step = 1; step <= 4; step++) {
+            if (!this.validateStep(step)) {
+                allValid = false;
+                break;
+            }
+        }
+        
+        if (!allValid) {
+            e.preventDefault();
+            this.showNotification('Por favor, corrija os erros antes de enviar.', 'error');
+            return;
+        }
+        
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn && !submitBtn.disabled) {
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Criando OS...';
+            
+            setTimeout(() => {
+                if (submitBtn.disabled) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    this.showNotification('Operação demorou muito. Tente novamente.', 'warning');
+                }
+            }, 10000);
+        }
+        
+        this.showNotification('Criando ordem de serviço...', 'info');
+    }
+    
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        
+        const icons = {
+            success: 'fas fa-check-circle',
+            warning: 'fas fa-exclamation-triangle',
+            error: 'fas fa-times-circle',
+            info: 'fas fa-info-circle'
+        };
+        
+        notification.innerHTML = `
+            <i class="${icons[type]} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 4000);
+    }
+    
+    initializeTooltips() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+    }
+}
+
+// Limpar instância anterior
+if (window.osWizardInstance) {
+    console.log('🧹 Cleaning previous wizard instance');
+    if (window.osWizardInstance.cleanup) {
+        window.osWizardInstance.cleanup();
+    }
+}
+
+// Inicializar wizard
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        console.log('🚀 Initializing OS Wizard...');
+        window.osWizardInstance = new OSWizard();
+        
+        setTimeout(() => {
+            const pageHeader = document.querySelector('.page-header');
+            const wizardContainer = document.querySelector('.wizard-container');
+            const formContainer = document.querySelector('.form-container');
+            
+            if (pageHeader) pageHeader.style.animation = 'fadeInUp 0.6s ease-out';
+            if (wizardContainer) wizardContainer.style.animation = 'fadeInUp 0.6s ease-out 0.2s both';
+            if (formContainer) formContainer.style.animation = 'fadeInUp 0.6s ease-out 0.4s both';
+        }, 100);
+        
+        console.log('✅ OS Wizard initialized successfully');
+    }, 100);
+});
+
+// Animações
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Funções de debug globais
+window.debugOSWizard = function() {
+    if (window.osWizardDebug) {
+        window.osWizardDebug.checkState();
+    } else {
+        console.log('❌ Debug not available');
+    }
+};
+
+window.forceEnableEquipment = function() {
+    if (window.osWizardDebug) {
+        window.osWizardDebug.forceEnable();
+    } else {
+        const equipmentSelect = document.getElementById('equipamento_id');
+        if (equipmentSelect) {
+            equipmentSelect.disabled = false;
+            console.log('✅ Equipment field enabled manually');
+        }
+    }
+};
+
+console.log('✅ Arquivo carregado completamente - Modal customizado funcionando');
+</script>
+{% endblock %}

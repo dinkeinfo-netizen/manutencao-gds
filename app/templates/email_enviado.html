@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container text-center mt-5">
+    <h1 class="display-5 text-success"><i class="fas fa-envelope"></i> E-mail enviado!</h1>
+    <p class="lead">Sua solicitação foi registrada e um e-mail de confirmação foi enviado com sucesso.</p>
+    <p>Você será redirecionado para a página inicial em 10 segundos.</p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-3">
+        <i class="fas fa-home"></i> Voltar para o início agora
+    </a>
+</div>
+<script>
+    setTimeout(function() {
+        window.location.href = "{{ url_for('main.index') }}";
+    }, 10000);
+</script>
+{% endblock %} 

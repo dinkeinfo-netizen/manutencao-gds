@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes da OS #{{ os.numero_os }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <a href="{{ url_for('main.manutencoes_concluidas') }}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <h4 class="mb-0">Detalhes da Ordem de Serviço #{{ os.numero_os }} - {{ os.localizacao.codigo if os.localizacao else 'N/A' }}</h4>
+        </div>
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+    </div>
+
+    <!-- Informações da Solicitação -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Informações da Solicitação</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Solicitante:</strong><br>
+                        {{ os.solicitante }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Localização/Área:</strong><br>
+                        {{ os.localizacao.codigo if os.localizacao else 'N/A' }} - {{ os.localizacao.nome if os.localizacao else 'N/A' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Tipo de Parada:</strong><br>
+                        {{ os.tipo_parada|title }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Equipamento:</strong><br>
+                        {{ os.equipamento.codigo if os.equipamento else 'N/A' }} - {{ os.equipamento.nome if os.equipamento else 'N/A' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Motivo da Quebra:</strong><br>
+                        {{ os.motivo }}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Início:</strong><br>
+                        {{ os.data_inicio.strftime('%d/%m/%Y, %H:%M:%S') if os.data_inicio else 'N/A' }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Término:</strong><br>
+                        {{ os.data_termino.strftime('%d/%m/%Y, %H:%M:%S') if os.data_termino else 'N/A' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalhes da Manutenção -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Detalhes da Manutenção</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <strong>Descrição do Serviço:</strong><br>
+                {{ os.descricao_servico or 'N/A' }}
+            </div>
+            <div class="mb-3">
+                <strong>Materiais Utilizados:</strong><br>
+                {{ os.materiais_utilizados or 'N/A' }}
+            </div>
+            
+            {% if os.fotos_paths %}
+            <div class="mb-3">
+                <strong>Fotos:</strong><br>
+                <div class="row">
+                    {% for foto in os.fotos_paths %}
+                    <div class="col-md-3 mb-2">
+                        <img src="{{ url_for('static', filename='uploads/' + foto) }}" 
+                             class="img-thumbnail" 
+                             style="max-height: 150px; cursor: pointer;"
+                             onclick="openImageModal('{{ url_for('static', filename='uploads/' + foto) }}')">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Check List de Verificação -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Check List de Verificação Pós Manutenção em Equipamentos em Processo</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" disabled {{ 'checked' if os.graxa_oleo else '' }}>
+                        <label class="form-check-label me-3">SIM</label>
+                        <input class="form-check-input" type="radio" disabled {{ 'checked' if not os.graxa_oleo else '' }}>
+                        <label class="form-check-label">NÃO</label>
+                        <span class="ms-3"><strong>Há graxa, óleo escorrendo no equipamento?</strong></span>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" disabled {{ 'checked' if os.limpeza else '' }}>
+                        <label class="form-check-label me-3">SIM</label>
+                        <input class="form-check-input" type="radio" disabled {{ 'checked' if not os.limpeza else '' }}>
+                        <label class="form-check-label">NÃO</label>
+                        <span class="ms-3"><strong>Foi realizada a limpeza da máquina pós-manutenção?</strong></span>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" disabled {{ 'checked' if os.pecas_soltas else '' }}>
+                        <label class="form-check-label me-3">SIM</label>
+                        <input class="form-check-input" type="radio" disabled {{ 'checked' if not os.pecas_soltas else '' }}>
+                        <label class="form-check-label">NÃO</label>
+                        <span class="ms-3"><strong>Há peças soltas em alguma parte do equipamento?</strong></span>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" disabled {{ 'checked' if os.equipamento_liberado else '' }}>
+                        <label class="form-check-label me-3">SIM</label>
+                        <input class="form-check-input" type="radio" disabled {{ 'checked' if not os.equipamento_liberado else '' }}>
+                        <label class="form-check-label">NÃO</label>
+                        <span class="ms-3"><strong>O equipamento está liberado para dar continuidade ao uso/processo?</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Assinaturas Digitais -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Assinaturas Digitais</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="text-center">
+                    <strong>Mecânico:</strong><br>
+                    {{ os.nome_mecanico or 'N/A' }}
+                    {% if os.data_assinatura_mecanico %}
+                        <small class="text-muted d-block">Assinado em: {{ os.data_assinatura_mecanico.strftime('%d/%m/%Y às %H:%M') }}</small>
+                    {% endif %}
+                    <div class="border mt-2 signature-display" style="min-height: 150px; background-color: #f8f9fa;">
+                        {% if os.assinatura_mecanico %}
+                            <img src="{{ os.assinatura_mecanico }}" 
+                                 alt="Assinatura do Mecânico" 
+                                 class="img-fluid signature-img"
+                                 style="max-height: 140px; cursor: pointer;"
+                                 onclick="openSignatureModal('{{ os.assinatura_mecanico }}', 'Assinatura do Mecânico')">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center h-100">
+                                <em class="text-muted">Assinatura não capturada</em>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-center">
+                    <strong>Conferente:</strong><br>
+                    {{ os.nome_conferente or 'N/A' }}
+                    {% if os.data_assinatura_conferente %}
+                        <small class="text-muted d-block">Assinado em: {{ os.data_assinatura_conferente.strftime('%d/%m/%Y às %H:%M') }}</small>
+                    {% endif %}
+                    <div class="border mt-2 signature-display" style="min-height: 150px; background-color: #f8f9fa;">
+                        {% if os.assinatura_conferente %}
+                            <img src="{{ os.assinatura_conferente }}" 
+                                 alt="Assinatura do Conferente" 
+                                 class="img-fluid signature-img"
+                                 style="max-height: 140px; cursor: pointer;"
+                                 onclick="openSignatureModal('{{ os.assinatura_conferente }}', 'Assinatura do Conferente')">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center h-100">
+                                <em class="text-muted">Assinatura não capturada</em>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if os.assinatura_mecanico and os.assinatura_conferente %}
+            <div class="text-center mt-3">
+                <span class="badge bg-success fs-6">
+                    <i class="fas fa-check-circle"></i> Documento Assinado Digitalmente
+                </span>
+            </div>
+        {% elif os.assinatura_mecanico or os.assinatura_conferente %}
+            <div class="text-center mt-3">
+                <span class="badge bg-warning fs-6">
+                    <i class="fas fa-exclamation-triangle"></i> Assinatura Parcial
+                </span>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+    <!-- Número SAP -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Número SAP</h5>
+        </div>
+        <div class="card-body">
+            <h4>{{ os.sap or 'N/A' }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para visualizar imagens -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Foto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openImageModal(imageSrc) {
+    document.getElementById('modalImage').src = imageSrc;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+</script>
+
+<style>
+@media print {
+    .btn, .modal { display: none !important; }
+    .card { border: 1px solid #000 !important; page-break-inside: avoid; }
+    .card-header { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }
+}
+</style>
+{% endblock %}

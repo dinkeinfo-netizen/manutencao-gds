@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Finalizar Manutenção - OS #{{ os.numero_os }}</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            Equipamento: {{ os.equipamento.nome }} | Local: {{ os.localizacao.nome }}
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="finalizarForm">
+        {{ form.hidden_tag() }}
+        
+        <!-- Descrição do Serviço -->
+        <div class="mb-4">
+            <label class="form-label">Descrição do Serviço Realizado</label>
+            {{ form.descricao_servico(class="form-control", rows=4, required=True) }}
+            {% if form.descricao_servico.errors %}
+                <div class="text-danger">{{ form.descricao_servico.errors[0] }}</div>
+            {% endif %}
+        </div>
+        
+        <!-- Materiais Utilizados -->
+        <div class="mb-4">
+            <label class="form-label">Materiais Utilizados</label>
+            {{ form.materiais_utilizados(class="form-control", rows=3) }}
+        </div>
+
+        <!-- Mecânico e Fotos -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="form-label">Mecânico Responsável</label>
+                {{ form.mecanico_responsavel(class="form-select") }}
+                {% if form.mecanico_responsavel.errors %}
+                    <div class="text-danger">{{ form.mecanico_responsavel.errors[0] }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Fotos</label>
+                <input type="file" name="fotos" class="form-control" multiple accept="image/png, image/jpeg">
+                <small class="text-muted">Formatos permitidos: PNG, JPG (Máx. 5 arquivos)</small>
+            </div>
+        </div>
+
+        <!-- Checklist -->
+        <div class="card mb-4">
+            <div class="card-header">
+                Check List de Verificação Pós Manutenção – RQ MAN – 066/01
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    {{ form.graxa_oleo(class="form-check-input") }}
+                    <label class="form-check-label">Há graxa/óleo escorrendo?</label>
+                </div>
+                <div class="form-check mb-3">
+                    {{ form.limpeza(class="form-check-input") }}
+                    <label class="form-check-label">Limpeza realizada?</label>
+                </div>
+                <div class="form-check mb-3">
+                    {{ form.pecas_soltas(class="form-check-input") }}
+                    <label class="form-check-label">Peças soltas?</label>
+                </div>
+                <div class="form-check mb-3">
+                    {{ form.equipamento_liberado(class="form-check-input") }}
+                    <label class="form-check-label">Equipamento liberado?</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nomes -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="form-label">Nome do Mecânico</label>
+                {{ form.nome_mecanico(class="form-control", required=True) }}
+                {% if form.nome_mecanico.errors %}
+                    <div class="text-danger">{{ form.nome_mecanico.errors[0] }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Nome do Conferente</label>
+                {{ form.nome_conferente(class="form-control", required=True) }}
+                {% if form.nome_conferente.errors %}
+                    <div class="text-danger">{{ form.nome_conferente.errors[0] }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Assinaturas Digitais -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Assinaturas Digitais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Assinatura do Mecânico -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Assinatura do Mecânico <span class="text-danger">*</span></label>
+                        <div class="signature-container">
+                            <canvas id="mechanicCanvas" class="signature-canvas"></canvas>
+                            <div class="signature-controls mt-2">
+                                <button type="button" id="clearMechanic" class="btn btn-sm btn-outline-secondary">Limpar</button>
+                                <span id="mechanicStatus" class="text-muted ms-2">Não assinado</span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="mechanic_signature" id="mechanicSignature">
+                    </div>
+
+                    <!-- Assinatura do Conferente -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Assinatura do Conferente <span class="text-danger">*</span></label>
+                        <div class="signature-container">
+                            <canvas id="inspectorCanvas" class="signature-canvas"></canvas>
+                            <div class="signature-controls mt-2">
+                                <button type="button" id="clearInspector" class="btn btn-sm btn-outline-secondary">Limpar</button>
+                                <span id="inspectorStatus" class="text-muted ms-2">Não assinado</span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="inspector_signature" id="inspectorSignature">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success" id="submitBtn">Salvar e Finalizar</button>
+            <a href="{{ url_for('main.manutencoes_andamento') }}" class="btn btn-danger">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.signature-canvas {
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    height: 200px;
+    background-color: #fafafa;
+    cursor: crosshair;
+}
+
+.signature-canvas:hover {
+    border-color: #007bff;
+}
+
+.signature-container {
+    position: relative;
+}
+
+.signature-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.canvas-signed {
+    border-color: #28a745 !important;
+}
+</style>
+
+<script>
+class SignaturePad {
+    constructor(canvasId, clearBtnId, statusId, hiddenInputId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.clearBtn = document.getElementById(clearBtnId);
+        this.status = document.getElementById(statusId);
+        this.hiddenInput = document.getElementById(hiddenInputId);
+        
+        this.isDrawing = false;
+        this.isSigned = false;
+        
+        this.setupCanvas();
+        this.setupEvents();
+    }
+    
+    setupCanvas() {
+        const rect = this.canvas.getBoundingClientRect();
+        this.canvas.width = rect.width * 2;
+        this.canvas.height = rect.height * 2;
+        this.ctx.scale(2, 2);
+        
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 2;
+    }
+    
+    setupEvents() {
+        // Mouse events
+        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mouseout', () => this.stopDrawing());
+        
+        // Touch events
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.startDrawing(e.touches[0]);
+        });
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            this.draw(e.touches[0]);
+        });
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.stopDrawing();
+        });
+        
+        // Clear button
+        this.clearBtn.addEventListener('click', () => this.clear());
+    }
+    
+    getPosition(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    startDrawing(e) {
+        this.isDrawing = true;
+        const pos = this.getPosition(e);
+        this.ctx.beginPath();
+        this.ctx.moveTo(pos.x, pos.y);
+    }
+    
+    draw(e) {
+        if (!this.isDrawing) return;
+        
+        const pos = this.getPosition(e);
+        this.ctx.lineTo(pos.x, pos.y);
+        this.ctx.stroke();
+        
+        if (!this.isSigned) {
+            this.isSigned = true;
+            this.updateStatus();
+        }
+    }
+    
+    stopDrawing() {
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            this.saveSignature();
+        }
+    }
+    
+    clear() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.isSigned = false;
+        this.hiddenInput.value = '';
+        this.updateStatus();
+    }
+    
+    saveSignature() {
+        if (this.isSigned) {
+            const dataURL = this.canvas.toDataURL('image/png');
+            this.hiddenInput.value = dataURL;
+        }
+    }
+    
+    updateStatus() {
+        if (this.isSigned) {
+            this.status.textContent = 'Assinado ✓';
+            this.status.className = 'text-success ms-2';
+            this.canvas.classList.add('canvas-signed');
+        } else {
+            this.status.textContent = 'Não assinado';
+            this.status.className = 'text-muted ms-2';
+            this.canvas.classList.remove('canvas-signed');
+        }
+    }
+}
+
+// Inicializar assinaturas quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    const mechanicPad = new SignaturePad(
+        'mechanicCanvas', 
+        'clearMechanic', 
+        'mechanicStatus', 
+        'mechanicSignature'
+    );
+    
+    const inspectorPad = new SignaturePad(
+        'inspectorCanvas', 
+        'clearInspector', 
+        'inspectorStatus', 
+        'inspectorSignature'
+    );
+    
+    // Validação do formulário
+    const form = document.getElementById('finalizarForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    form.addEventListener('submit', function(e) {
+        const mechanicSigned = document.getElementById('mechanicSignature').value;
+        const inspectorSigned = document.getElementById('inspectorSignature').value;
+        
+        if (!mechanicSigned || !inspectorSigned) {
+            e.preventDefault();
+            alert('Por favor, colete ambas as assinaturas antes de finalizar a OS.');
+            return false;
+        }
+        
+        // Confirmação antes de enviar
+        if (!confirm('Confirma a finalização da OS? Esta ação não pode ser desfeita.')) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Desabilitar botão para evitar duplo clique
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Finalizando...';
+    });
+});
+</script>
+{% endblock %}

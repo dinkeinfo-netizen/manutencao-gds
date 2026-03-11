@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Manutenções Concluídas – RQ MAN – 073 01</h4>
+        <a href="{{ url_for('main.exportar_excel') }}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>OS</th>
+                    <th>Solicitante</th>
+                    <th>Localização</th>
+                    <th>Tipo</th>
+                    <th>Equipamento</th>
+                    <th>Início</th>
+                    <th>Término</th>
+                    <th>SAP</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for os in ordens %}
+                <tr>
+                    <td>{{ os.numero_os }}</td>
+                    <td>{{ os.solicitante }}</td>
+                    <td>{{ os.localizacao.codigo }} - {{ os.localizacao.nome }}</td>
+                    <td>{{ os.tipo_manutencao }}</td>
+                    <td>{{ os.equipamento.codigo }} - {{ os.equipamento.nome }}</td>
+                    <td>{{ os.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ os.data_termino.strftime('%d/%m/%Y %H:%M') if os.data_termino else '-' }}</td>
+                    <td>
+                        {% if os.sap %}
+                        <span class="sap-display" id="sap-display-{{ os.id }}">{{ os.sap }}</span>
+                        <button class="btn btn-link btn-sm edit-sap-btn" data-os-id="{{ os.id }}"
+                            data-os-number="{{ os.numero_os }}" data-current-sap="{{ os.sap }}" title="Editar SAP">
+                            <i class="bi bi-pencil-square text-primary"></i>
+                        </button>
+                        {% else %}
+                        <button class="btn btn-sm btn-outline-primary edit-sap-btn" data-os-id="{{ os.id }}"
+                            data-os-number="{{ os.numero_os }}" data-current-sap="">
+                            Inserir SAP
+                        </button>
+                        {% endif %}
+
+                        <!-- Formulário inline para SAP (inicialmente oculto) -->
+                        <div class="sap-form-inline" id="sap-form-{{ os.id }}" style="display: none; margin-top: 5px;">
+                            <form action="{{ url_for('main.inserir_sap', os_id=os.id) }}" method="POST"
+                                class="sap-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" name="sap" class="form-control sap-input"
+                                        placeholder="Digite o SAP" value="{{ os.sap if os.sap }}" pattern="\d{4,10}"
+                                        maxlength="10" required>
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm cancel-sap-btn"
+                                        data-os-id="{{ os.id }}">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">4-10 dígitos numéricos</small>
+                            </form>
+                        </div>
+                    </td>
+                    <td>
+                        <!-- Botão Visualizar -->
+                        <a href="{{ url_for('main.detalhes_os', os_id=os.id) }}"
+                            class="btn btn-sm btn-outline-info me-1" title="Visualizar OS">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <!-- Botão Imprimir -->
+                        <a href="{{ url_for('main.detalhes_os', os_id=os.id) }}"
+                            class="btn btn-sm btn-outline-dark me-1" title="Imprimir OS" target="_blank"
+                            onclick="setTimeout(() => { window.print(); }, 1000)">
+                            <i class="bi bi-printer"></i>
+                        </a>
+                        <!-- Botão Excluir -->
+                        <form action="{{ url_for('main.excluir_os', os_id=os.id) }}" method="POST"
+                            class="d-inline delete-form" onsubmit="return confirmDelete('{{ os.numero_os }}')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir OS">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mensagem quando não há OSs -->
+    {% if not ordens %}
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i>
+        Nenhuma manutenção concluída encontrada.
+    </div>
+    {% endif %}
+
+    <div class="mt-4 text-center text-muted">
+        <hr>
+        <small>Desenvolvido por DINKE</small>
+    </div>
+</div>
+
+<!-- Notificações -->
+<div id="notification-container"></div>
+
+<!-- Função JavaScript simples para confirmação -->
+<script>
+    // Função de confirmação simples
+    function confirmDelete(osNumber) {
+        const confirmed = confirm(`Tem certeza que deseja excluir a OS ${osNumber}?\n\nEsta ação não pode ser desfeita.`);
+
+        if (confirmed) {
+            console.log(`🗑️ Usuário confirmou exclusão da OS: ${osNumber}`);
+            return true; // Permite o submit do formulário
+        } else {
+            console.log(`❌ Usuário cancelou exclusão da OS: ${osNumber}`);
+            return false; // Cancela o submit do formulário
+        }
+    }
+</script>
+
+<style>
+    /* Estilos da Tabela */
+    .table {
+        font-size: 0.9em;
+        margin-bottom: 0.5rem;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        padding: 0.5rem;
+        border-top: none;
+        font-weight: 600;
+    }
+
+    .table td {
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+
+    /* SAP Display */
+    .sap-display {
+        font-weight: 600;
+        color: #2c3e50;
+        background: rgba(40, 167, 69, 0.1);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-family: monospace;
+        margin-right: 5px;
+    }
+
+    /* Botões */
+    .btn-link {
+        padding: 0;
+        border: none;
+        background: none;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Formulário SAP Inline */
+    .sap-form-inline {
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Notificações */
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        min-width: 300px;
+        animation: slideIn 0.3s ease;
+    }
+
+    .notification.success {
+        background: #28a745;
+    }
+
+    .notification.error {
+        background: #dc3545;
+    }
+
+    .notification.warning {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Loading states */
+    .btn-loading {
+        position: relative;
+        color: transparent !important;
+    }
+
+    .btn-loading::after {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        top: 50%;
+        left: 50%;
+        margin-left: -8px;
+        margin-top: -8px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .table {
+            font-size: 0.8em;
+        }
+
+        .btn-sm {
+            padding: 0.125rem 0.25rem;
+            font-size: 0.75rem;
+        }
+    }
+</style>
+
+<script>
+    // Sistema simples sem dependências externas
+    class SimpleManutencaoSystem {
+        constructor() {
+            this.init();
+        }
+
+        init() {
+            this.setupEventListeners();
+            console.log('✅ Sistema inicializado');
+        }
+
+        setupEventListeners() {
+            // Event listeners para editar SAP
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.edit-sap-btn')) {
+                    e.preventDefault();
+                    this.toggleSapForm(e.target.closest('.edit-sap-btn'));
+                }
+
+                if (e.target.closest('.cancel-sap-btn')) {
+                    e.preventDefault();
+                    this.cancelSapEdit(e.target.closest('.cancel-sap-btn'));
+                }
+            });
+
+            // Event listeners para formulários SAP
+            document.addEventListener('submit', (e) => {
+                if (e.target.classList.contains('sap-form')) {
+                    e.preventDefault();
+                    this.submitSapForm(e.target);
+                }
+            });
+
+            // Validação em tempo real para inputs SAP
+            document.addEventListener('input', (e) => {
+                if (e.target.classList.contains('sap-input')) {
+                    this.validateSapInput(e.target);
+                }
+            });
+
+            console.log('🔗 Event listeners configurados');
+        }
+
+        toggleSapForm(button) {
+            const osId = button.dataset.osId;
+            const sapForm = document.getElementById(`sap-form-${osId}`);
+            const sapInput = sapForm.querySelector('.sap-input');
+
+            // Esconder outros formulários abertos
+            document.querySelectorAll('.sap-form-inline').forEach(form => {
+                if (form.id !== `sap-form-${osId}`) {
+                    form.style.display = 'none';
+                }
+            });
+
+            // Toggle do formulário atual
+            if (sapForm.style.display === 'none' || !sapForm.style.display) {
+                sapForm.style.display = 'block';
+                setTimeout(() => {
+                    sapInput.focus();
+                    sapInput.select();
+                }, 100);
+
+                console.log('📝 Formulário SAP aberto para OS:', osId);
+            } else {
+                sapForm.style.display = 'none';
+            }
+        }
+
+        cancelSapEdit(button) {
+            const osId = button.dataset.osId;
+            const sapForm = document.getElementById(`sap-form-${osId}`);
+            sapForm.style.display = 'none';
+
+            console.log('❌ Edição SAP cancelada para OS:', osId);
+        }
+
+        validateSapInput(input) {
+            // Permitir apenas números
+            input.value = input.value.replace(/\D/g, '');
+
+            // Validar comprimento
+            const value = input.value;
+            const isValid = /^\d{4,10}$/.test(value);
+
+            // Remover classes anteriores
+            input.classList.remove('is-valid', 'is-invalid');
+
+            // Adicionar classe apropriada
+            if (value.length > 0) {
+                if (isValid) {
+                    input.classList.add('is-valid');
+                } else if (value.length >= 4) {
+                    input.classList.add('is-invalid');
+                }
+            }
+        }
+
+        submitSapForm(form) {
+            const sapInput = form.querySelector('.sap-input');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const value = sapInput.value.trim();
+
+            // Validar
+            if (!/^\d{4,10}$/.test(value)) {
+                this.showNotification('SAP deve ter entre 4 e 10 dígitos!', 'error');
+                sapInput.focus();
+                return;
+            }
+
+            // Mostrar loading
+            submitBtn.classList.add('btn-loading');
+            submitBtn.disabled = true;
+
+            // Criar FormData
+            const formData = new FormData(form);
+
+            // Enviar via fetch
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        this.showNotification('SAP atualizado com sucesso!', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        throw new Error('Erro no servidor');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    this.showNotification('Erro ao atualizar SAP. Tente novamente.', 'error');
+                    submitBtn.classList.remove('btn-loading');
+                    submitBtn.disabled = false;
+                });
+
+            console.log('💾 Enviando SAP:', value);
+        }
+
+        showNotification(message, type = 'success') {
+            const container = document.getElementById('notification-container');
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+            ${message}
+        `;
+
+            container.appendChild(notification);
+
+            // Auto remover após 4 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 4000);
+
+            console.log(`📢 Notificação (${type}):`, message);
+        }
+    }
+
+    // Inicializar quando DOM carregar
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('🚀 Iniciando sistema...');
+        window.manutencaoSystem = new SimpleManutencaoSystem();
+    });
+
+    // Função de debug global
+    window.debugSystem = function () {
+        console.log('📊 Estado do sistema:', {
+            formsAbertos: document.querySelectorAll('.sap-form-inline[style*="block"]').length,
+            sistemaCarregado: typeof window.manutencaoSystem !== 'undefined'
+        });
+    };
+</script>
+{% endblock %}

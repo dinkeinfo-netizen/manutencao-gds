@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-3">
+    <h4 class="mb-3">Manutenções Concluídas – RQ MAN – 073 01</h4>
+
+    <div class="table-container">
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>OS</th>
+                    <th>Solicitante</th>
+                    <th>Localização</th>
+                    <th>Tipo</th>
+                    <th>Equipamento</th>
+                    <th>Início</th>
+                    <th>Término</th>
+                    <th>SAP</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for os in ordens %}
+                <tr>
+                    <td>{{ os.numero_os }}</td>
+                    <td>{{ os.solicitante }}</td>
+                    <td>{{ os.localizacao.codigo }} - {{ os.localizacao.nome }}</td>
+                    <td>{{ os.tipo_manutencao }}</td>
+                    <td>{{ os.equipamento.codigo }} - {{ os.equipamento.nome }}</td>
+                    <td>{{ os.data_inicio.strftime('%d/%m/%Y, %H:%M:%S') }}</td>
+                    <td>{{ os.data_termino.strftime('%d/%m/%Y, %H:%M:%S') if os.data_termino else '-' }}</td>
+                    <td>
+                        {% if os.sap %}
+                            <span class="sap-value" data-os-id="{{ os.id }}">{{ os.sap }}</span>
+                            <button class="btn btn-link btn-sm edit-sap-btn" 
+                                    data-os-id="{{ os.id }}"
+                                    data-os-number="{{ os.numero_os }}"
+                                    data-current-sap="{{ os.sap }}"
+                                    data-bs-toggle="tooltip" 
+                                    title="Editar SAP">
+                                <i class="bi bi-pencil-square text-primary"></i>
+                            </button>
+                        {% else %}
+                            <button class="btn btn-sm btn-outline-primary edit-sap-btn" 
+                                    data-os-id="{{ os.id }}"
+                                    data-os-number="{{ os.numero_os }}"
+                                    data-current-sap="">
+                                Inserir SAP
+                            </button>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <!-- Botão Visualizar -->
+                        <a href="{{ url_for('main.detalhes_os', os_id=os.id) }}" 
+                           class="btn btn-sm btn-outline-info me-1"
+                           data-bs-toggle="tooltip" 
+                           title="Visualizar OS">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <!-- Botão Imprimir -->
+                        <a href="{{ url_for('main.detalhes_os', os_id=os.id) }}" 
+                           class="btn btn-sm btn-outline-dark me-1 print-btn"
+                           data-bs-toggle="tooltip" 
+                           title="Imprimir OS"
+                           target="_blank">
+                            <i class="bi bi-printer"></i>
+                        </a>
+                        <!-- Botão Excluir -->
+                        <form action="{{ url_for('main.excluir_os', os_id=os.id) }}" method="POST" class="d-inline delete-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" 
+                                    class="btn btn-sm btn-outline-danger delete-btn" 
+                                    data-bs-toggle="tooltip" 
+                                    title="Excluir OS"
+                                    data-os-number="{{ os.numero_os }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mensagem quando não há OSs -->
+    {% if not ordens %}
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i>
+        Nenhuma manutenção concluída encontrada.
+    </div>
+    {% endif %}
+
+    <div class="mt-4 text-center text-muted">
+        <hr>
+        <small>Desenvolvido por DINKE</small>
+    </div>
+</div>
+
+<!-- Modal Único para Edição do SAP -->
+<div class="modal fade" id="editarSAPModal" tabindex="-1" aria-labelledby="editarSAPModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="sapForm" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="editarSAPModalLabel">Editar Código SAP</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="sapInput" class="form-label">Código SAP</label>
+                        <input type="text" 
+                               id="sapInput"
+                               name="sap" 
+                               class="form-control" 
+                               placeholder="Digite o código SAP (ex: 123456)"
+                               maxlength="10"
+                               required>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Digite entre 4 e 10 dígitos numéricos
+                        </div>
+                        <div class="invalid-feedback">
+                            Por favor, digite um código SAP válido (4-10 dígitos)
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="saveSapBtn">
+                        <i class="bi bi-check-circle me-1"></i>Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação para Exclusão -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    <h6 class="mt-3">Tem certeza que deseja excluir esta OS?</h6>
+                    <p class="text-muted mb-0">OS: <span id="deleteOsNumber" class="fw-bold"></span></p>
+                    <p class="text-muted"><small>Esta ação não pode ser desfeita.</small></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-1"></i>Excluir Permanentemente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-content">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-2">Processando...</p>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+class ManutencoesConcluidas {
+    constructor() {
+        this.currentOsId = null;
+        this.currentForm = null;
+        this.isProcessing = false;
+        
+        this.init();
+    }
+    
+    init() {
+        console.log('🚀 Inicializando Manutenções Concluídas...');
+        
+        // Limpar event listeners anteriores
+        this.cleanup();
+        
+        // Configurar event listeners
+        this.setupEventListeners();
+        
+        // Inicializar tooltips
+        this.initializeTooltips();
+        
+        // Inicializar validação em tempo real
+        this.setupRealTimeValidation();
+        
+        console.log('✅ Manutenções Concluídas inicializada');
+    }
+    
+    cleanup() {
+        // Remover event listeners anteriores se existirem
+        const existingButtons = document.querySelectorAll('.edit-sap-btn, .delete-btn, .print-btn');
+        existingButtons.forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+        });
+        
+        // Limpar modais se estiverem abertos
+        const modals = document.querySelectorAll('.modal.show');
+        modals.forEach(modal => {
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
+        
+        console.log('🧹 Limpeza concluída');
+    }
+    
+    setupEventListeners() {
+        // Event listeners para botões de edição do SAP
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.edit-sap-btn')) {
+                e.preventDefault();
+                this.handleEditSap(e.target.closest('.edit-sap-btn'));
+            }
+            
+            if (e.target.closest('.delete-btn')) {
+                e.preventDefault();
+                this.handleDeleteClick(e.target.closest('.delete-btn'));
+            }
+            
+            if (e.target.closest('.print-btn')) {
+                this.handlePrintClick(e.target.closest('.print-btn'));
+            }
+        });
+        
+        // Event listener para confirmação de exclusão
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+            this.confirmDelete();
+        });
+        
+        // Event listener para formulário SAP
+        document.getElementById('sapForm').addEventListener('submit', (e) => {
+            this.handleSapSubmit(e);
+        });
+        
+        // Event listener para modal SAP quando fechado
+        document.getElementById('editarSAPModal').addEventListener('hidden.bs.modal', () => {
+            this.resetSapForm();
+        });
+        
+        // Prevenir duplo clique
+        document.addEventListener('click', (e) => {
+            if (this.isProcessing && (e.target.closest('.btn-primary') || e.target.closest('.btn-danger'))) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        });
+        
+        console.log('🔗 Event listeners configurados');
+    }
+    
+    handleEditSap(button) {
+        if (this.isProcessing) return;
+        
+        const osId = button.dataset.osId;
+        const osNumber = button.dataset.osNumber;
+        const currentSap = button.dataset.currentSap || '';
+        
+        console.log('✏️ Editando SAP para OS:', osNumber);
+        
+        // Configurar modal
+        this.currentOsId = osId;
+        document.getElementById('editarSAPModalLabel').textContent = `Editar Código SAP - OS ${osNumber}`;
+        document.getElementById('sapInput').value = currentSap;
+        document.getElementById('sapForm').action = `/inserir-sap/${osId}`;
+        
+        // Limpar validação anterior
+        const sapInput = document.getElementById('sapInput');
+        sapInput.classList.remove('is-valid', 'is-invalid');
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('editarSAPModal'));
+        modal.show();
+        
+        // Focar no input após a animação
+        setTimeout(() => {
+            sapInput.focus();
+            sapInput.select();
+        }, 300);
+    }
+    
+    handleSapSubmit(e) {
+        e.preventDefault();
+        
+        if (this.isProcessing) return;
+        
+        const form = e.target;
+        const sapInput = document.getElementById('sapInput');
+        const sapValue = sapInput.value.trim();
+        
+        // Validar SAP
+        if (!this.validateSap(sapValue)) {
+            sapInput.classList.add('is-invalid');
+            sapInput.focus();
+            return;
+        }
+        
+        sapInput.classList.remove('is-invalid');
+        sapInput.classList.add('is-valid');
+        
+        // Mostrar loading
+        this.setProcessing(true);
+        
+        // Submeter formulário
+        this.submitSapForm(form);
+    }
+    
+    validateSap(value) {
+        // SAP deve ter entre 4 e 10 dígitos
+        const sapRegex = /^\d{4,10}$/;
+        return sapRegex.test(value);
+    }
+    
+    submitSapForm(form) {
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Sucesso - recarregar página ou atualizar tabela
+                this.showNotification('SAP atualizado com sucesso!', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error('Erro ao salvar SAP');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            this.showNotification('Erro ao atualizar SAP. Tente novamente.', 'error');
+        })
+        .finally(() => {
+            this.setProcessing(false);
+        });
+    }
+    
+    handleDeleteClick(button) {
+        if (this.isProcessing) return;
+        
+        const form = button.closest('.delete-form');
+        const osNumber = button.dataset.osNumber;
+        
+        this.currentForm = form;
+        document.getElementById('deleteOsNumber').textContent = osNumber;
+        
+        const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+        modal.show();
+    }
+    
+    confirmDelete() {
+        if (this.isProcessing || !this.currentForm) return;
+        
+        this.setProcessing(true);
+        
+        // Fechar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal'));
+        modal.hide();
+        
+        // Submeter formulário
+        setTimeout(() => {
+            this.currentForm.submit();
+        }, 300);
+    }
+    
+    handlePrintClick(link) {
+        // Adicionar parâmetro para impressão
+        const url = new URL(link.href);
+        url.searchParams.set('print', '1');
+        
+        const printWindow = window.open(url.toString(), '_blank');
+        printWindow.addEventListener('load', () => {
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        });
+    }
+    
+    resetSapForm() {
+        const form = document.getElementById('sapForm');
+        const sapInput = document.getElementById('sapInput');
+        
+        form.reset();
+        sapInput.classList.remove('is-valid', 'is-invalid');
+        this.currentOsId = null;
+    }
+    
+    setupRealTimeValidation() {
+        const sapInput = document.getElementById('sapInput');
+        
+        sapInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            
+            // Permitir apenas números
+            e.target.value = value.replace(/\D/g, '');
+            
+            // Validar em tempo real
+            const isValid = this.validateSap(e.target.value);
+            
+            e.target.classList.remove('is-valid', 'is-invalid');
+            
+            if (e.target.value.length > 0) {
+                if (isValid) {
+                    e.target.classList.add('is-valid');
+                } else if (e.target.value.length >= 4) {
+                    e.target.classList.add('is-invalid');
+                }
+            }
+        });
+        
+        // Validar quando sair do campo
+        sapInput.addEventListener('blur', (e) => {
+            const value = e.target.value;
+            if (value.length > 0 && !this.validateSap(value)) {
+                e.target.classList.add('is-invalid');
+            }
+        });
+    }
+    
+    setProcessing(isProcessing) {
+        this.isProcessing = isProcessing;
+        
+        const overlay = document.getElementById('loadingOverlay');
+        const saveBtn = document.getElementById('saveSapBtn');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (isProcessing) {
+            overlay.style.display = 'flex';
+            saveBtn.disabled = true;
+            confirmBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+        } else {
+            overlay.style.display = 'none';
+            saveBtn.disabled = false;
+            confirmBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Salvar Alterações';
+        }
+    }
+    
+    initializeTooltips() {
+        // Destruir tooltips existentes
+        const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        existingTooltips.forEach(element => {
+            const tooltip = bootstrap.Tooltip.getInstance(element);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+        });
+        
+        // Inicializar novos tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                delay: { show: 500, hide: 100 }
+            });
+        });
+        
+        console.log('💡 Tooltips inicializados');
+    }
+    
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 500px;';
+        
+        const icons = {
+            success: 'bi-check-circle-fill',
+            error: 'bi-exclamation-triangle-fill',
+            warning: 'bi-exclamation-circle-fill',
+            info: 'bi-info-circle-fill'
+        };
+        
+        notification.innerHTML = `
+            <i class="bi ${icons[type]} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remover após 5 segundos
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+}
+
+// Inicializar quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', function() {
+    // Aguardar um pouco para garantir que o Bootstrap carregou
+    setTimeout(() => {
+        window.manutencoesConcluidas = new ManutencoesConcluidas();
+    }, 100);
+});
+
+// Função global para debug
+window.debugManutencoes = function() {
+    if (window.manutencoesConcluidas) {
+        console.log('📊 Estado atual:', {
+            isProcessing: window.manutencoesConcluidas.isProcessing,
+            currentOsId: window.manutencoesConcluidas.currentOsId,
+            modalsOpen: document.querySelectorAll('.modal.show').length
+        });
+    }
+};
+</script>
+
+<!-- Estilos -->
+<style>
+.table {
+    font-size: 0.9em;
+    margin-bottom: 0.5rem;
+}
+.table th {
+    background-color: #f8f9fa;
+    padding: 0.4rem 0.6rem;
+    border-top: none;
+}
+.table td {
+    padding: 0.4rem 0.6rem;
+    vertical-align: middle;
+}
+.sap-value {
+    font-weight: 500;
+    color: #2c3e50;
+    display: inline-block;
+    margin-right: 8px;
+    font-family: monospace;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.btn-link {
+    padding: 0;
+    vertical-align: baseline;
+    border: none;
+}
+.btn-link:hover {
+    background: none;
+}
+.modal-content {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.modal-header {
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+.modal-footer {
+    border-top: 1px solid rgba(0,0,0,0.1);
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+.is-valid {
+    border-color: #28a745;
+}
+.is-invalid {
+    border-color: #dc3545;
+}
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.loading-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    min-width: 200px;
+}
+.table-container {
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+/* Estilo para campos de input com ícones */
+.input-group .form-control {
+    border-left: none;
+}
+.input-group .input-group-text {
+    border-right: none;
+    background: transparent;
+}
+/* Animações */
+.fade.show {
+    opacity: 1;
+}
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+    transform: translate(0, -50px);
+}
+.modal.show .modal-dialog {
+    transform: none;
+}
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-sm {
+        padding: 0.125rem 0.25rem;
+        font-size: 0.75rem;
+    }
+    .table {
+        font-size: 0.8em;
+    }
+    .sap-value {
+        font-size: 0.8em;
+    }
+}
+</style>
+{% endblock %}

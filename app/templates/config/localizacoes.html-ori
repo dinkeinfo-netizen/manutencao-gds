@@ -1,0 +1,68 @@
+{% extends "config/base_config.html" %}
+{% set active_page = "localizacoes" %}
+
+{% block config_content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Adicionar Localização</h5>
+    </div>
+    
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.codigo.label(class="form-label") }}
+                    {{ form.codigo(class="form-control") }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.nome.label(class="form-label") }}
+                    {{ form.nome(class="form-control") }}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Localizações Cadastradas</h5>
+    </div>
+    
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for localizacao in localizacoes %}
+                    <tr>
+                        <td>{{ localizacao.codigo }}</td>
+                        <td>{{ localizacao.nome }}</td>
+                        <td>
+                            <a href="{{ url_for('main.editar_localizacao', id=localizacao.id) }}" 
+                               class="btn btn-sm btn-warning">
+                               Editar
+                            </a>
+                            <form method="POST" 
+                                  action="{{ url_for('main.excluir_localizacao', id=localizacao.id) }}" 
+                                  class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,791 @@
+{% extends "base.html" %}
+
+{% block title %}OS #{{ os.numero_os }} - {{ os.localizacao.codigo if os.localizacao else 'N/A' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header com ações -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div class="d-flex align-items-center">
+            <a href="{{ url_for('main.manutencoes_concluidas') }}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            <div>
+                <h4 class="mb-0">Ordem de Serviço #{{ os.numero_os }}</h4>
+                <small class="text-muted">{{ os.localizacao.codigo if os.localizacao else 'N/A' }} - Gerado em {{ os.data_criacao.strftime('%d/%m/%Y às %H:%M') if os.data_criacao else '' }}</small>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-info" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+            <button class="btn btn-outline-primary" onclick="downloadPDF()">
+                <i class="bi bi-file-pdf"></i> PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Badge -->
+    <div class="mb-4 no-print">
+        {% if os.data_termino %}
+            <span class="badge bg-success fs-6 me-2">
+                <i class="bi bi-check-circle me-1"></i>Manutenção Concluída
+            </span>
+        {% else %}
+            <span class="badge bg-warning fs-6 me-2">
+                <i class="bi bi-clock me-1"></i>Em Andamento
+            </span>
+        {% endif %}
+        
+        {% if os.sap %}
+            <span class="badge bg-info fs-6">
+                <i class="bi bi-tag me-1"></i>SAP: {{ os.sap }}
+            </span>
+        {% endif %}
+    </div>
+
+    <!-- Informações da Solicitação -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-file-earmark-text me-2"></i>Informações da Solicitação
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="info-item mb-3">
+                        <div class="info-label">
+                            <i class="bi bi-person me-2 text-primary"></i>Solicitante
+                        </div>
+                        <div class="info-value">{{ os.solicitante }}</div>
+                    </div>
+                    
+                    <div class="info-item mb-3">
+                        <div class="info-label">
+                            <i class="bi bi-geo-alt me-2 text-success"></i>Localização/Área
+                        </div>
+                        <div class="info-value">
+                            {{ os.localizacao.codigo if os.localizacao else 'N/A' }} - {{ os.localizacao.nome if os.localizacao else 'N/A' }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item mb-3">
+                        <div class="info-label">
+                            <i class="bi bi-tools me-2 text-info"></i>Equipamento
+                        </div>
+                        <div class="info-value">
+                            {{ os.equipamento.codigo if os.equipamento else 'N/A' }} - {{ os.equipamento.nome if os.equipamento else 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="info-item mb-3">
+                        <div class="info-label">
+                            <i class="bi bi-wrench me-2 text-warning"></i>Tipo de Manutenção
+                        </div>
+                        <div class="info-value">{{ os.tipo_manutencao|title }}</div>
+                    </div>
+                    
+                    <div class="info-item mb-3">
+                        <div class="info-label">
+                            <i class="bi bi-pause-circle me-2 text-secondary"></i>Tipo de Parada
+                        </div>
+                        <div class="info-value">{{ os.tipo_parada|title }}</div>
+                    </div>
+                    
+                    <div class="info-item mb-3">
+                        <div class="info-label">
+                            <i class="bi bi-calendar me-2 text-dark"></i>Período da Manutenção
+                        </div>
+                        <div class="info-value">
+                            <strong>Início:</strong> {{ os.data_inicio.strftime('%d/%m/%Y às %H:%M') if os.data_inicio else 'N/A' }}<br>
+                            <strong>Término:</strong> {{ os.data_termino.strftime('%d/%m/%Y às %H:%M') if os.data_termino else 'Não finalizada' }}
+                            {% if os.data_inicio and os.data_termino %}
+                                <br><small class="text-muted">Duração: {{ ((os.data_termino - os.data_inicio).total_seconds() / 3600) | round(1) }} horas</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-clipboard-list me-2 text-dark"></i>Motivo da Quebra/Manutenção
+                        </div>
+                        <div class="info-value motivo-text">{{ os.motivo }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalhes da Execução (apenas se tiver dados) -->
+    {% if os.descricao_servico or os.materiais_utilizados or os.nome_mecanico %}
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-gear me-2"></i>Detalhes da Execução
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if os.nome_mecanico %}
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-person-gear me-2 text-primary"></i>Mecânico Responsável
+                        </div>
+                        <div class="info-value">{{ os.nome_mecanico }}</div>
+                    </div>
+                </div>
+                {% if os.nome_conferente %}
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-person-check me-2 text-success"></i>Conferente
+                        </div>
+                        <div class="info-value">{{ os.nome_conferente }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if os.descricao_servico %}
+            <div class="info-item mb-4">
+                <div class="info-label">
+                    <i class="bi bi-file-text me-2 text-info"></i>Descrição do Serviço Realizado
+                </div>
+                <div class="info-value service-description">{{ os.descricao_servico }}</div>
+            </div>
+            {% endif %}
+            
+            {% if os.materiais_utilizados %}
+            <div class="info-item mb-4">
+                <div class="info-label">
+                    <i class="bi bi-box me-2 text-warning"></i>Materiais Utilizados
+                </div>
+                <div class="info-value materials-list">{{ os.materiais_utilizados }}</div>
+            </div>
+            {% endif %}
+            
+            {% if os.fotos_paths %}
+            <div class="info-item">
+                <div class="info-label">
+                    <i class="bi bi-camera me-2 text-secondary"></i>Fotos do Serviço
+                </div>
+                <div class="info-value">
+                    <div class="row">
+                        {% for foto in os.fotos_paths %}
+                        <div class="col-md-3 col-sm-4 col-6 mb-3">
+                            <div class="photo-container">
+                                <img src="{{ url_for('static', filename='uploads/' + foto) }}" 
+                                     class="img-thumbnail photo-thumb" 
+                                     onclick="openImageModal('{{ url_for('static', filename='uploads/' + foto) }}', 'Foto {{ loop.index }}')"
+                                     alt="Foto {{ loop.index }}">
+                                <div class="photo-number">{{ loop.index }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Check List de Verificação (apenas se tiver dados) -->
+    {% if os.graxa_oleo is not none or os.limpeza is not none or os.pecas_soltas is not none or os.equipamento_liberado is not none %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="bi bi-clipboard-check me-2"></i>Check List de Verificação Pós Manutenção – RQ MAN – 066/01
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Há graxa/óleo escorrendo? -->
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-droplet me-2 text-primary"></i>
+                            Há graxa/óleo escorrendo?
+                        </div>
+                        <div class="checklist-answer">
+                            {% if os.graxa_oleo == 'sim' %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>SIM
+                                </span>
+                            {% elif os.graxa_oleo == 'nao' %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>NÃO
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">Não verificado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Limpeza realizada? -->
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-brush me-2 text-primary"></i>
+                            Limpeza realizada?
+                        </div>
+                        <div class="checklist-answer">
+                            {% if os.limpeza == 'sim' %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>SIM
+                                </span>
+                            {% elif os.limpeza == 'nao' %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>NÃO
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">Não verificado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Peças soltas? -->
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-nut me-2 text-primary"></i>
+                            Peças soltas?
+                        </div>
+                        <div class="checklist-answer">
+                            {% if os.pecas_soltas == 'sim' %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>SIM
+                                </span>
+                            {% elif os.pecas_soltas == 'nao' %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>NÃO
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">Não verificado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Equipamento liberado? -->
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-unlock me-2 text-primary"></i>
+                            Equipamento liberado para operação?
+                        </div>
+                        <div class="checklist-answer">
+                            {% if os.equipamento_liberado == 'sim' %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>SIM
+                                </span>
+                            {% elif os.equipamento_liberado == 'nao' %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>NÃO
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">Não verificado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumo do Checklist -->
+            <div class="alert alert-info mt-3">
+                <h6><i class="bi bi-info-circle me-2"></i>Resumo das Verificações</h6>
+                <div class="row">
+                    {% set checklist_items = [
+                        ('graxa_oleo', 'Graxa/Óleo', 'nao'),
+                        ('limpeza', 'Limpeza', 'sim'),
+                        ('pecas_soltas', 'Peças Soltas', 'nao'),
+                        ('equipamento_liberado', 'Equipamento Liberado', 'sim')
+                    ] %}
+                    
+                    {% for field, label, good_value in checklist_items %}
+                        {% set value = os[field] %}
+                        {% if value %}
+                        <div class="col-md-3 mb-2">
+                            <small>
+                                {% if value == good_value %}
+                                    <i class="bi bi-check-circle text-success me-1"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle text-danger me-1"></i>
+                                {% endif %}
+                                <strong>{{ label }}:</strong> {{ value|upper }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Assinaturas Digitais -->
+    {% if os.assinatura_mecanico or os.assinatura_conferente %}
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-pencil-square me-2"></i>Assinaturas Digitais
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="signature-section">
+                        <div class="signature-header">
+                            <i class="bi bi-person-gear me-2 text-primary"></i>
+                            <strong>Assinatura do Mecânico</strong>
+                        </div>
+                        <div class="signature-name">{{ os.nome_mecanico or 'N/A' }}</div>
+                        {% if os.data_assinatura_mecanico %}
+                            <small class="text-muted">Assinado em: {{ os.data_assinatura_mecanico.strftime('%d/%m/%Y às %H:%M') }}</small>
+                        {% endif %}
+                        <div class="signature-display">
+                            {% if os.assinatura_mecanico %}
+                                <img src="{{ os.assinatura_mecanico }}" 
+                                     alt="Assinatura do Mecânico" 
+                                     class="signature-img"
+                                     onclick="openSignatureModal('{{ os.assinatura_mecanico }}', 'Assinatura do Mecânico - {{ os.nome_mecanico }}')">
+                            {% else %}
+                                <div class="signature-placeholder">
+                                    <em class="text-muted">Assinatura não capturada</em>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="signature-section">
+                        <div class="signature-header">
+                            <i class="bi bi-person-check me-2 text-success"></i>
+                            <strong>Assinatura do Conferente</strong>
+                        </div>
+                        <div class="signature-name">{{ os.nome_conferente or 'N/A' }}</div>
+                        {% if os.data_assinatura_conferente %}
+                            <small class="text-muted">Assinado em: {{ os.data_assinatura_conferente.strftime('%d/%m/%Y às %H:%M') }}</small>
+                        {% endif %}
+                        <div class="signature-display">
+                            {% if os.assinatura_conferente %}
+                                <img src="{{ os.assinatura_conferente }}" 
+                                     alt="Assinatura do Conferente" 
+                                     class="signature-img"
+                                     onclick="openSignatureModal('{{ os.assinatura_conferente }}', 'Assinatura do Conferente - {{ os.nome_conferente }}')">
+                            {% else %}
+                                <div class="signature-placeholder">
+                                    <em class="text-muted">Assinatura não capturada</em>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status das Assinaturas -->
+            <div class="text-center mt-4">
+                {% if os.assinatura_mecanico and os.assinatura_conferente %}
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-shield-check me-2"></i>
+                        <strong>Documento Assinado Digitalmente</strong><br>
+                        <small>Ambas as assinaturas foram capturadas com sucesso</small>
+                    </div>
+                {% elif os.assinatura_mecanico or os.assinatura_conferente %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Assinatura Parcial</strong><br>
+                        <small>{{ 'Falta assinatura do conferente' if os.assinatura_mecanico else 'Falta assinatura do mecânico' }}</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer do Relatório -->
+    <div class="card">
+        <div class="card-body text-center">
+            <div class="row">
+                <div class="col-md-4">
+                    <small class="text-muted">
+                        <strong>Sistema de Manutenção GDS</strong><br>
+                        RQ MAN – 073 01
+                    </small>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">
+                        <strong>Gerado em:</strong><br>
+                        {{ moment().format('DD/MM/YYYY [às] HH:mm') }}
+                    </small>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted">
+                        <strong>Desenvolvido por:</strong><br>
+                        DINKE
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Visualizar Imagens -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">Visualizar Imagem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <img id="modalImage" src="" class="img-fluid" style="max-height: 70vh;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary" onclick="downloadImage()">
+                    <i class="bi bi-download me-1"></i>Baixar
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Visualizar Assinaturas -->
+<div class="modal fade" id="signatureModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="signatureModalTitle">Visualizar Assinatura</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-3">
+                <img id="modalSignature" src="" class="img-fluid" style="max-height: 300px; border: 2px solid #ddd; border-radius: 8px; background: #f8f9fa;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Layout geral */
+.card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card-header {
+    font-weight: 600;
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Info items */
+.info-item {
+    padding: 0.75rem;
+    border-radius: 6px;
+    background: rgba(248, 249, 250, 0.7);
+    border-left: 4px solid #007bff;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.info-value {
+    color: #495057;
+    line-height: 1.6;
+}
+
+.motivo-text, .service-description, .materials-list {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    white-space: pre-wrap;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Checklist */
+.checklist-item {
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    background: #f8f9fa;
+    text-align: center;
+    height: 100%;
+}
+
+.checklist-question {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #2c3e50;
+}
+
+.checklist-answer .badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
+/* Fotos */
+.photo-container {
+    position: relative;
+    cursor: pointer;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.photo-container:hover {
+    transform: scale(1.05);
+}
+
+.photo-thumb {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border: 2px solid #dee2e6;
+}
+
+.photo-number {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+/* Assinaturas */
+.signature-section {
+    text-align: center;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.signature-header {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.signature-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+.signature-display {
+    margin-top: 1rem;
+    min-height: 150px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.signature-img {
+    max-height: 140px;
+    max-width: 100%;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.signature-img:hover {
+    opacity: 0.8;
+}
+
+.signature-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6c757d;
+}
+
+/* Print styles */
+@media print {
+    .no-print { 
+        display: none !important; 
+    }
+    
+    .card { 
+        border: 1px solid #000 !important; 
+        page-break-inside: avoid; 
+        box-shadow: none !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .card-header { 
+        background-color: #f8f9fa !important; 
+        color: #000 !important;
+        -webkit-print-color-adjust: exact; 
+    }
+    
+    .badge {
+        border: 1px solid #000 !important;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .info-item {
+        background: #f9f9f9 !important;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .signature-display {
+        border: 2px solid #000 !important;
+    }
+    
+    .photo-thumb {
+        max-height: 100px !important;
+    }
+    
+    .container-fluid {
+        padding: 0 !important;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .info-item {
+        margin-bottom: 1rem;
+    }
+    
+    .signature-display {
+        min-height: 120px;
+    }
+    
+    .photo-thumb {
+        height: 100px;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Estados visuais melhorados */
+.bg-success-subtle {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.bg-danger-subtle {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+.border-success {
+    border-color: #198754 !important;
+}
+
+.border-danger {
+    border-color: #dc3545 !important;
+}
+</style>
+
+<script>
+// Funções para modais
+function openImageModal(imageSrc, title) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('imageModalTitle').textContent = title || 'Visualizar Imagem';
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+function openSignatureModal(signatureSrc, title) {
+    document.getElementById('modalSignature').src = signatureSrc;
+    document.getElementById('signatureModalTitle').textContent = title || 'Visualizar Assinatura';
+    new bootstrap.Modal(document.getElementById('signatureModal')).show();
+}
+
+// Função para download de imagem
+function downloadImage() {
+    const img = document.getElementById('modalImage');
+    const link = document.createElement('a');
+    link.download = 'foto_os_{{ os.numero_os }}.jpg';
+    link.href = img.src;
+    link.click();
+}
+
+// Função para gerar PDF (placeholder)
+function downloadPDF() {
+    // Implementar integração com biblioteca de PDF se necessário
+    window.print();
+}
+
+// Adicionar data atual se não houver moment.js
+if (typeof moment === 'undefined') {
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+        const dateElements = document.querySelectorAll('[data-current-date]');
+        dateElements.forEach(el => el.textContent = dateStr);
+    });
+}
+
+// Melhorias de acessibilidade
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar tooltips para imagens
+    const images = document.querySelectorAll('.photo-thumb, .signature-img');
+    images.forEach(img => {
+        img.setAttribute('title', 'Clique para ampliar');
+    });
+    
+    // Keyboard navigation para imagens
+    images.forEach(img => {
+        img.setAttribute('tabindex', '0');
+        img.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                img.click();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

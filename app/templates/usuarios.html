@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Gerenciar Usuários</h2>
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Usuário</th>
+                <th>Email</th>
+                <th>Papel</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+            <tr>
+                <td>{{ usuario.id }}</td>
+                <td>{{ usuario.username }}</td>
+                <td>{{ usuario.email }}</td>
+                <td>{{ usuario.role }}</td>
+                <td>
+                    <a href="{{ url_for('main.editar_usuario', user_id=usuario.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                    <a href="{{ url_for('main.redefinir_senha_usuario', user_id=usuario.id) }}" class="btn btn-sm btn-secondary">Mudar Senha</a>
+                    <form method="POST" action="{{ url_for('main.excluir_usuario', user_id=usuario.id) }}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %} 

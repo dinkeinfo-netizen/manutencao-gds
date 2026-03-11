@@ -1,0 +1,359 @@
+{% extends "config/base_config.html" %}
+{% set active_page = "equipamentos" %}
+
+{% block config_content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>
+            Adicionar Equipamento
+        </h5>
+    </div>
+    
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.codigo.label(class="form-label") }}
+                    {{ form.codigo(class="form-control") }}
+                    {% if form.codigo.errors %}
+                        <div class="text-danger small">
+                            {% for error in form.codigo.errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.nome.label(class="form-label") }}
+                    {{ form.nome(class="form-control") }}
+                    {% if form.nome.errors %}
+                        <div class="text-danger small">
+                            {% for error in form.nome.errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>
+                Salvar
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Equipamentos Cadastrados
+        </h5>
+        <div class="text-muted small">
+            Total: {{ equipamentos|length }} equipamentos
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped" id="tabelaEquipamentos">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th width="150">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for equipamento in equipamentos %}
+                    <tr data-codigo="{{ equipamento.codigo|lower }}" 
+                        data-nome="{{ equipamento.nome|lower }}">
+                        <td>
+                            <strong>{{ equipamento.codigo }}</strong>
+                        </td>
+                        <td>{{ equipamento.nome }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('main.editar_equipamento', id=equipamento.id) }}" 
+                                   class="btn btn-warning"
+                                   title="Editar equipamento">
+                                   <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-danger btn-excluir"
+                                        data-id="{{ equipamento.id }}"
+                                        data-codigo="{{ equipamento.codigo }}"
+                                        data-nome="{{ equipamento.nome }}"
+                                        data-url="{{ url_for('main.excluir_equipamento', id=equipamento.id) }}"
+                                        title="Excluir equipamento">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                            Nenhum equipamento cadastrado ainda.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="modalExclusao" tabindex="-1" aria-labelledby="modalExclusaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalExclusaoLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Tem certeza que deseja excluir o equipamento:</p>
+                <div class="text-center mb-3">
+                    <strong class="fs-5 text-danger" id="equipamentoInfo"></strong>
+                </div>
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Atenção:</strong> Esta ação não pode ser desfeita!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarExclusao">
+                    <span class="btn-text">
+                        <i class="fas fa-trash me-2"></i>
+                        Excluir
+                    </span>
+                    <span class="btn-loading d-none">
+                        <i class="fas fa-spinner fa-spin me-2"></i>
+                        Excluindo...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form oculto para envio da exclusão -->
+<form id="formExclusaoOculto" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando script de exclusão de equipamentos');
+    
+    const modal = document.getElementById('modalExclusao');
+    const btnConfirmar = document.getElementById('btnConfirmarExclusao');
+    const equipamentoInfo = document.getElementById('equipamentoInfo');
+    const formOculto = document.getElementById('formExclusaoOculto');
+    
+    let bsModal;
+    let equipamentoParaExcluir = null;
+    
+    // Inicializar modal Bootstrap
+    try {
+        bsModal = new bootstrap.Modal(modal, {
+            backdrop: 'static',
+            keyboard: true
+        });
+        console.log('✅ Modal Bootstrap inicializado');
+    } catch (error) {
+        console.error('❌ Erro ao inicializar modal:', error);
+        return;
+    }
+    
+    // Event listener para todos os botões de excluir
+    document.querySelectorAll('.btn-excluir').forEach(function(btn, index) {
+        console.log(`📌 Configurando botão ${index + 1}:`, {
+            id: btn.dataset.id,
+            codigo: btn.dataset.codigo,
+            url: btn.dataset.url
+        });
+        
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('🖱️ Botão excluir clicado');
+            
+            // Resetar estado do botão
+            resetarBotaoExcluir();
+            
+            // Capturar dados do equipamento
+            equipamentoParaExcluir = {
+                id: this.dataset.id,
+                codigo: this.dataset.codigo,
+                nome: this.dataset.nome,
+                url: this.dataset.url
+            };
+            
+            console.log('📋 Equipamento selecionado:', equipamentoParaExcluir);
+            
+            // Atualizar informações no modal
+            equipamentoInfo.textContent = `${equipamentoParaExcluir.codigo} - ${equipamentoParaExcluir.nome}`;
+            
+            // Mostrar modal
+            try {
+                bsModal.show();
+                console.log('👁️ Modal exibido');
+            } catch (error) {
+                console.error('❌ Erro ao mostrar modal:', error);
+            }
+        });
+    });
+    
+    // Event listener para o botão de confirmação
+    if (btnConfirmar) {
+        btnConfirmar.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            console.log('✅ Confirmação de exclusão clicada');
+            
+            if (!equipamentoParaExcluir) {
+                console.error('❌ Nenhum equipamento selecionado para exclusão');
+                alert('Erro: Nenhum equipamento selecionado.');
+                return;
+            }
+            
+            // Mostrar loading
+            mostrarLoading();
+            
+            // Configurar formulário
+            formOculto.action = equipamentoParaExcluir.url;
+            
+            console.log('📤 Enviando formulário para:', equipamentoParaExcluir.url);
+            
+            // Submeter formulário
+            try {
+                formOculto.submit();
+            } catch (error) {
+                console.error('❌ Erro ao submeter formulário:', error);
+                resetarBotaoExcluir();
+                alert('Erro ao processar exclusão. Tente novamente.');
+            }
+        });
+    }
+    
+    // Resetar quando modal for fechado
+    modal.addEventListener('hidden.bs.modal', function() {
+        console.log('🔄 Modal fechado - resetando estado');
+        resetarBotaoExcluir();
+        equipamentoParaExcluir = null;
+    });
+    
+    // Event listener para tecla ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            console.log('⌨️ ESC pressionado - fechando modal');
+            bsModal.hide();
+        }
+    });
+    
+    function mostrarLoading() {
+        console.log('⏳ Mostrando loading');
+        btnConfirmar.disabled = true;
+        btnConfirmar.querySelector('.btn-text').classList.add('d-none');
+        btnConfirmar.querySelector('.btn-loading').classList.remove('d-none');
+    }
+    
+    function resetarBotaoExcluir() {
+        console.log('🔄 Resetando botão');
+        btnConfirmar.disabled = false;
+        btnConfirmar.querySelector('.btn-text').classList.remove('d-none');
+        btnConfirmar.querySelector('.btn-loading').classList.add('d-none');
+    }
+    
+    console.log('✅ Script de exclusão configurado com sucesso');
+    console.log(`📊 Total de botões configurados: ${document.querySelectorAll('.btn-excluir').length}`);
+});
+
+// Função global de fallback para compatibilidade
+function confirmarExclusao(id, codigo, nome) {
+    console.log('🔄 Função fallback chamada:', {id, codigo, nome});
+    
+    const modal = document.getElementById('modalExclusao');
+    const equipamentoInfo = document.getElementById('equipamentoInfo');
+    
+    if (!modal || !equipamentoInfo) {
+        console.error('❌ Elementos do modal não encontrados');
+        return;
+    }
+    
+    try {
+        const bsModal = new bootstrap.Modal(modal);
+        
+        equipamentoInfo.textContent = `${codigo} - ${nome || ''}`;
+        
+        // Construir URL para o fallback
+        const urlBase = '{{ url_for("main.config_equipamentos") }}';
+        const excluirUrl = urlBase.replace('/config/equipamentos', `/config/equipamentos/excluir/${id}`);
+        
+        // Armazenar dados globalmente
+        window.equipamentoParaExcluir = {
+            id: id,
+            codigo: codigo,
+            nome: nome,
+            url: excluirUrl
+        };
+        
+        bsModal.show();
+        console.log('✅ Modal exibido via fallback');
+        
+    } catch (error) {
+        console.error('❌ Erro no fallback:', error);
+        // Último recurso: confirm nativo
+        if (confirm(`Tem certeza que deseja excluir o equipamento ${codigo}?`)) {
+            window.location.href = excluirUrl;
+        }
+    }
+}
+</script>
+
+<style>
+.btn-excluir:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+}
+
+#equipamentoInfo {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #dc3545;
+}
+
+.btn-loading {
+    pointer-events: none;
+}
+
+/* Garantir que o modal apareça acima de tudo */
+.modal {
+    z-index: 1055;
+}
+
+.modal-backdrop {
+    z-index: 1050;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,78 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">Manutenção GDS - RQ MAN - 073 01</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.index') }}">Início</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.lancar_os') }}">Lançar OS</a>
+                </li>
+                {% if current_user.is_authenticated and current_user.role in ['admin', 'mecanico'] %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.manutencoes_andamento') }}">Manutenções</a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                </li>
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.register') }}">
+                        <i class="fas fa-user-plus"></i> Cadastrar Usuário
+                    </a>
+                </li>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.role in ['admin', 'mecanico'] %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Configurações
+                    </a>
+                    <ul class="dropdown-menu">
+                        {% if current_user.role == 'admin' %}
+                        <li><a class="dropdown-item" href="{{ url_for('main.listar_usuarios') }}">Gerenciar Usuários</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.config_mecanicos') }}">Mecânicos</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.config_equipamentos') }}">Equipamentos</a>
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.config_localizacoes') }}">Localizações</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role == 'mecanico' %}
+                        <!-- Mecânico pode ter opções específicas aqui, se desejar -->
+                        {% endif %}
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Sair</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <span class="nav-link active text-white fw-bold">
+                        <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.login') }}">
+                        <i class="fas fa-sign-in-alt"></i> Entrar
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

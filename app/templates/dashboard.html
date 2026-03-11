@@ -1,0 +1,1763 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Analytics{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="dashboard-title mb-2">
+                        <i class="fas fa-chart-line me-3"></i>
+                        Dashboard de Manutenção
+                    </h1>
+                    <p class="dashboard-subtitle mb-0">
+                        <i class="fas fa-calendar me-2"></i>
+                        Visão geral dos indicadores de performance • <span id="lastUpdate">Atualizado agora</span>
+                    </p>
+                </div>
+                <div class="dashboard-actions">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary" onclick="refreshDashboard()">
+                            <i class="fas fa-sync-alt me-2"></i>Atualizar
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i>Relatório
+                        </button>
+                        <button class="btn btn-outline-info" onclick="exportData()">
+                            <i class="fas fa-download me-2"></i>Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row mb-5">
+    <div class="col-lg-2 col-md-4 col-6 mb-4">
+        <div class="kpi-card kpi-primary" data-aos="fade-up" data-aos-delay="100">
+            <div class="kpi-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-value" data-counter="{{ total_os }}">0</div>
+                <div class="kpi-label">Total de OS</div>
+                <div class="kpi-trend">
+                    <i class="fas fa-arrow-up text-success"></i>
+                    <span class="text-success">+12%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-2 col-md-4 col-6 mb-4">
+        <div class="kpi-card kpi-warning" data-aos="fade-up" data-aos-delay="200">
+            <div class="kpi-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-value" data-counter="{{ os_abertas }}">0</div>
+                <div class="kpi-label">OS Abertas</div>
+                <div class="kpi-trend">
+                    <i class="fas fa-minus text-warning"></i>
+                    <span class="text-warning">Estável</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-2 col-md-4 col-6 mb-4">
+        <div class="kpi-card kpi-info" data-aos="fade-up" data-aos-delay="300">
+            <div class="kpi-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-value" data-counter="{{ os_andamento }}">0</div>
+                <div class="kpi-label">Em Andamento</div>
+                <div class="kpi-trend">
+                    <i class="fas fa-arrow-up text-info"></i>
+                    <span class="text-info">Ativo</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-2 col-md-4 col-6 mb-4">
+        <div class="kpi-card kpi-success" data-aos="fade-up" data-aos-delay="400">
+            <div class="kpi-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-value" data-counter="{{ os_concluidas }}">0</div>
+                <div class="kpi-label">Concluídas</div>
+                <div class="kpi-trend">
+                    <i class="fas fa-arrow-up text-success"></i>
+                    <span class="text-success">+8%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 col-md-8 col-12 mb-4">
+        <div class="kpi-card kpi-dark kpi-featured" data-aos="fade-up" data-aos-delay="500">
+            <div class="kpi-icon">
+                <i class="fas fa-stopwatch"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-value">
+                    <span data-counter="{{ mttr_geral }}">0</span><small class="kpi-unit">h</small>
+                </div>
+                <div class="kpi-label">MTTR Geral</div>
+                <div class="kpi-subtitle">Mean Time To Repair</div>
+                <div class="kpi-progress">
+                    <div class="progress">
+                        <div class="progress-bar {% if mttr_geral <= 4 %}bg-success{% elif mttr_geral <= 6 %}bg-warning{% else %}bg-danger{% endif %}"
+                            style="width: {{ (4 / mttr_geral * 100 if mttr_geral > 4 else 100)|round }}%"></div>
+                    </div>
+                    <small class="text-muted">Meta: 4h</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MTTR por Tipo -->
+{% if mttr_por_tipo %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="analysis-card" data-aos="fade-up">
+            <div class="analysis-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="analysis-title">
+                            <i class="fas fa-wrench me-2"></i>
+                            MTTR por Tipo de Manutenção
+                        </h4>
+                        <p class="analysis-subtitle">Análise comparativa de performance por categoria</p>
+                    </div>
+                    <div class="analysis-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="toggleView('mttr-tipo')">
+                            <i class="fas fa-chart-bar me-1"></i>
+                            Ver Gráfico
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="analysis-body">
+                <div class="row" id="mttr-tipo-cards">
+                    {% for tipo in mttr_por_tipo %}
+                    <div class="col-lg-4 mb-4">
+                        <div
+                            class="metric-card {% if loop.index == 1 %}metric-best{% elif loop.index == mttr_por_tipo|length %}metric-worst{% endif %}">
+                            <div class="metric-header">
+                                <div class="metric-icon">
+                                    {% if tipo.tipo_manutencao == 'Corretiva' %}
+                                    <i class="fas fa-tools text-danger"></i>
+                                    {% elif tipo.tipo_manutencao == 'Preventiva' %}
+                                    <i class="fas fa-shield-alt text-success"></i>
+                                    {% else %}
+                                    <i class="fas fa-cog text-primary"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="metric-badge">
+                                    {% if loop.index == 1 %}
+                                    <span class="badge bg-success">Melhor</span>
+                                    {% elif loop.index == mttr_por_tipo|length %}
+                                    <span class="badge bg-warning">Atenção</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="metric-content">
+                                <h5 class="metric-type">{{ tipo.tipo_manutencao }}</h5>
+                                <div class="metric-value">{{ "%.1f"|format(tipo.mttr) }}<span
+                                        class="metric-unit">h</span></div>
+                                <div class="metric-meta">
+                                    <span class="metric-count">{{ tipo.total_os }} OS concluídas</span>
+                                    <span class="metric-percent">{{ ((tipo.mttr /
+                                        (mttr_por_tipo|map(attribute='mttr')|sum)) * 100)|round }}% do total</span>
+                                </div>
+                            </div>
+                            <div class="metric-progress">
+                                <div class="progress">
+                                    <div class="progress-bar"
+                                        style="width: {{ (tipo.mttr / (mttr_por_tipo|map(attribute='mttr')|max) * 100)|round }}%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Gráficos Principal -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="analysis-card" data-aos="fade-up">
+            <div class="analysis-header">
+                <h4 class="analysis-title">
+                    <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                    Equipamentos Críticos - Maior MTTR
+                </h4>
+                <p class="analysis-subtitle">Equipamentos que necessitam atenção prioritária</p>
+            </div>
+            <div class="analysis-body">
+                <div class="chart-container" style="min-height: 400px;">
+                    <canvas id="chartEquipamentos"></canvas>
+                    <div id="loaderEquipamentos" class="chart-loader">
+                        <i class="fas fa-spinner fa-spin"></i> Carregando dados...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance e Tendências -->
+<div class="row mb-5">
+    <div class="col-lg-6 mb-4">
+        <div class="analysis-card h-100" data-aos="fade-right">
+            <div class="analysis-header">
+                <h4 class="analysis-title text-success">
+                    <i class="fas fa-user-hard-hat me-2"></i>
+                    Performance dos Mecânicos
+                </h4>
+                <p class="analysis-subtitle">Ranking baseado no menor MTTR</p>
+            </div>
+            <div class="analysis-body">
+                <div class="chart-container" style="min-height: 300px;">
+                    <canvas id="chartMecanicos"></canvas>
+                    <div id="loaderMecanicos" class="chart-loader">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="analysis-card h-100" data-aos="fade-left">
+            <div class="analysis-header">
+                <h4 class="analysis-title text-info">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Tendência MTTR (30 dias)
+                </h4>
+                <p class="analysis-subtitle">Evolução temporal da performance</p>
+            </div>
+            <div class="analysis-body">
+                <div class="chart-container" style="min-height: 300px;">
+                    <canvas id="chartTendencia"></canvas>
+                    <div id="loaderTendencia" class="chart-loader">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabelas de Dados -->
+<div class="row mb-5">
+    <div class="col-lg-6 mb-4">
+        <div class="data-table-card" data-aos="zoom-in">
+            <div class="data-table-header">
+                <h5 class="data-table-title">
+                    <i class="fas fa-fire me-2 text-warning"></i>
+                    Equipamentos com Mais Falhas
+                </h5>
+                <div class="data-table-actions">
+                    <button class="btn btn-sm btn-outline-primary" onclick="exportTable('equipamentos')">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="data-table-body">
+                {% if equipamentos %}
+                <div class="table-responsive">
+                    <table class="table data-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-tools me-1"></i>Equipamento
+                                </th>
+                                <th class="text-center">
+                                    <i class="fas fa-exclamation-circle me-1"></i>Falhas
+                                </th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for equip in equipamentos %}
+                            <tr class="data-row">
+                                <td class="equipment-name">{{ equip.nome }}</td>
+                                <td class="text-center">
+                                    <span class="data-badge failure-count">{{ equip.total_os }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if equip.total_os >= 5 %}
+                                    <span class="status-badge status-critical">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Crítico
+                                    </span>
+                                    {% elif equip.total_os >= 3 %}
+                                    <span class="status-badge status-warning">
+                                        <i class="fas fa-exclamation me-1"></i>Atenção
+                                    </span>
+                                    {% else %}
+                                    <span class="status-badge status-normal">
+                                        <i class="fas fa-check me-1"></i>Normal
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state-small">
+                    <i class="fas fa-tools mb-3"></i>
+                    <p>Nenhum dado de falhas disponível</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="data-table-card" data-aos="zoom-in" data-aos-delay="100">
+            <div class="data-table-header">
+                <h5 class="data-table-title">
+                    <i class="fas fa-trophy me-2 text-primary"></i>
+                    Ranking Mecânicos (Performance)
+                </h5>
+                <div class="data-table-actions">
+                    <button class="btn btn-sm btn-outline-primary" onclick="exportTable('mecanicos')">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="data-table-body">
+                {% if mttr_por_mecanico %}
+                <div class="table-responsive">
+                    <table class="table data-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 60px;">#</th>
+                                <th>
+                                    <i class="fas fa-user me-1"></i>Mecânico
+                                </th>
+                                <th class="text-center">
+                                    <i class="fas fa-stopwatch me-1"></i>MTTR
+                                </th>
+                                <th class="text-center">
+                                    <i class="fas fa-list-ol me-1"></i>OS
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mecanico in mttr_por_mecanico[:10] %}
+                            <tr class="data-row">
+                                <td class="text-center">
+                                    {% if loop.index == 1 %}
+                                    <div class="ranking-badge rank-1">
+                                        <i class="fas fa-crown"></i>
+                                    </div>
+                                    {% elif loop.index == 2 %}
+                                    <div class="ranking-badge rank-2">
+                                        <i class="fas fa-medal"></i>
+                                    </div>
+                                    {% elif loop.index == 3 %}
+                                    <div class="ranking-badge rank-3">
+                                        <i class="fas fa-award"></i>
+                                    </div>
+                                    {% else %}
+                                    <span class="ranking-number">{{ loop.index }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="mechanic-name">{{ mecanico.nome }}</td>
+                                <td class="text-center">
+                                    <span class="data-badge mttr-value">{{ "%.1f"|format(mecanico.mttr) }}h</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="os-count">{{ mecanico.total_os }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state-small">
+                    <i class="fas fa-users mb-3"></i>
+                    <p>Dados de performance em processamento</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Insights Inteligentes -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="insights-card" data-aos="fade-up">
+            <div class="insights-header">
+                <h4 class="insights-title">
+                    <i class="fas fa-brain me-2"></i>
+                    Insights Inteligentes & Recomendações
+                </h4>
+                <p class="insights-subtitle">Análise automatizada baseada em dados</p>
+            </div>
+            <div class="insights-body">
+                <div class="row">
+                    <div class="col-lg-4 mb-4">
+                        <div class="insight-card insight-target">
+                            <div class="insight-icon">
+                                <i class="fas fa-bullseye"></i>
+                            </div>
+                            <div class="insight-content">
+                                <h6 class="insight-title">🎯 Meta MTTR</h6>
+                                <div class="insight-value">
+                                    Meta: <strong class="text-success">&lt; 4 horas</strong>
+                                </div>
+                                <div class="insight-status">
+                                    {% if mttr_geral > 4 %}
+                                    <span class="status-badge status-critical">
+                                        <i class="fas fa-arrow-up me-1"></i>{{ "%.1f"|format(mttr_geral - 4) }}h acima
+                                    </span>
+                                    {% else %}
+                                    <span class="status-badge status-success">
+                                        <i class="fas fa-check me-1"></i>Meta atingida
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="insight-progress">
+                                    <div class="progress">
+                                        <div class="progress-bar {% if mttr_geral <= 4 %}bg-success{% else %}bg-danger{% endif %}"
+                                            style="width: {{ (4 / mttr_geral * 100 if mttr_geral > 4 else 100)|round }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 mb-4">
+                        <div class="insight-card insight-status">
+                            <div class="insight-icon">
+                                {% if mttr_geral > 8 %}
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
+                                {% elif mttr_geral > 4 %}
+                                <i class="fas fa-exclamation-circle text-warning"></i>
+                                {% else %}
+                                <i class="fas fa-check-circle text-success"></i>
+                                {% endif %}
+                            </div>
+                            <div class="insight-content">
+                                <h6 class="insight-title">📊 Status Atual</h6>
+                                <div class="insight-value">
+                                    MTTR: <strong>{{ mttr_geral }}h</strong>
+                                </div>
+                                <div class="insight-status">
+                                    {% if mttr_geral > 8 %}
+                                    <span class="status-badge status-critical">
+                                        <i class="fas fa-times-circle me-1"></i>Crítico
+                                    </span>
+                                    <div class="alert alert-danger small mt-2 mb-0">
+                                        Requer ação imediata
+                                    </div>
+                                    {% elif mttr_geral > 4 %}
+                                    <span class="status-badge status-warning">
+                                        <i class="fas fa-exclamation me-1"></i>Atenção
+                                    </span>
+                                    <div class="alert alert-warning small mt-2 mb-0">
+                                        Melhorias necessárias
+                                    </div>
+                                    {% else %}
+                                    <span class="status-badge status-success">
+                                        <i class="fas fa-star me-1"></i>Excelente
+                                    </span>
+                                    <div class="alert alert-success small mt-2 mb-0">
+                                        Performance superior
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 mb-4">
+                        <div class="insight-card insight-action">
+                            <div class="insight-icon">
+                                <i class="fas fa-rocket"></i>
+                            </div>
+                            <div class="insight-content">
+                                <h6 class="insight-title">🚀 Ação Recomendada</h6>
+                                {% if mttr_geral > 8 %}
+                                <div class="action-items">
+                                    <div class="action-item critical">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <span>Auditoria de equipamentos críticos</span>
+                                    </div>
+                                    <div class="action-item critical">
+                                        <i class="fas fa-graduation-cap me-2"></i>
+                                        <span>Treinamento intensivo da equipe</span>
+                                    </div>
+                                    <div class="action-item critical">
+                                        <i class="fas fa-boxes me-2"></i>
+                                        <span>Revisão de estoque de peças</span>
+                                    </div>
+                                </div>
+                                {% elif mttr_geral > 6 %}
+                                <div class="action-items">
+                                    <div class="action-item warning">
+                                        <i class="fas fa-search me-2"></i>
+                                        <span>Foque nos equipamentos críticos</span>
+                                    </div>
+                                    <div class="action-item warning">
+                                        <i class="fas fa-chalkboard-teacher me-2"></i>
+                                        <span>Melhorar treinamento da equipe</span>
+                                    </div>
+                                </div>
+                                {% elif mttr_geral > 4 %}
+                                <div class="action-items">
+                                    <div class="action-item info">
+                                        <i class="fas fa-analytics me-2"></i>
+                                        <span>Identifique gargalos específicos</span>
+                                    </div>
+                                    <div class="action-item info">
+                                        <i class="fas fa-cogs me-2"></i>
+                                        <span>Otimize equipamentos com maior MTTR</span>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="action-items">
+                                    <div class="action-item success">
+                                        <i class="fas fa-thumbs-up me-2"></i>
+                                        <span>Mantenha as boas práticas</span>
+                                    </div>
+                                    <div class="action-item success">
+                                        <i class="fas fa-eye me-2"></i>
+                                        <span>Continue monitorando tendências</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive Summary -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="executive-summary">
+                            <h6 class="summary-title">
+                                <i class="fas fa-clipboard-check me-2"></i>
+                                Resumo Executivo
+                            </h6>
+                            <div class="summary-metrics">
+                                <div class="summary-metric">
+                                    <div class="summary-value text-primary">{{ (100 * os_concluidas / total_os if
+                                        total_os > 0 else 0)|round }}%</div>
+                                    <div class="summary-label">Taxa de Conclusão</div>
+                                    <div class="summary-trend">
+                                        <i class="fas fa-arrow-up text-success"></i>
+                                    </div>
+                                </div>
+                                <div class="summary-metric">
+                                    <div class="summary-value text-warning">{{ (100 * os_andamento / total_os if
+                                        total_os > 0 else 0)|round }}%</div>
+                                    <div class="summary-label">Em Andamento</div>
+                                    <div class="summary-trend">
+                                        <i class="fas fa-minus text-warning"></i>
+                                    </div>
+                                </div>
+                                <div class="summary-metric">
+                                    <div class="summary-value text-info">{{ (100 * os_abertas / total_os if total_os > 0
+                                        else 0)|round }}%</div>
+                                    <div class="summary-label">Aguardando</div>
+                                    <div class="summary-trend">
+                                        <i class="fas fa-arrow-down text-success"></i>
+                                    </div>
+                                </div>
+                                <div class="summary-metric">
+                                    <div class="summary-value text-success">{{ mttr_por_mecanico|length }}</div>
+                                    <div class="summary-label">Mecânicos Ativos</div>
+                                    <div class="summary-trend">
+                                        <i class="fas fa-users text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="quick-actions-card" data-aos="fade-up">
+            <div class="quick-actions-header">
+                <h5 class="quick-actions-title">
+                    <i class="fas fa-bolt me-2 text-warning"></i>
+                    Ações Rápidas
+                </h5>
+            </div>
+            <div class="quick-actions-body">
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <a href="{{ url_for('main.lancar_os') }}" class="quick-action-btn primary">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">Nova OS</div>
+                                <div class="quick-action-subtitle">Criar ordem de serviço</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <a href="{{ url_for('main.manutencoes_andamento') }}" class="quick-action-btn warning">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">Em Andamento</div>
+                                <div class="quick-action-subtitle">{{ os_andamento }} OS ativas</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <a href="{{ url_for('main.manutencoes_concluidas') }}" class="quick-action-btn success">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">Concluídas</div>
+                                <div class="quick-action-subtitle">Ver histórico</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <a href="{{ url_for('main.config_equipamentos') }}" class="quick-action-btn info">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-tools"></i>
+                            </div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">Configurações</div>
+                                <div class="quick-action-subtitle">Gerenciar sistema</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Dashboard Styles */
+    .dashboard-header {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
+        padding: 2rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .dashboard-subtitle {
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+
+    .dashboard-actions .btn {
+        border-radius: 2rem;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.05em;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        border: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--kpi-color, #667eea), rgba(255, 255, 255, 0.3));
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    }
+
+    .kpi-primary {
+        --kpi-color: #667eea;
+    }
+
+    .kpi-warning {
+        --kpi-color: #f39c12;
+    }
+
+    .kpi-info {
+        --kpi-color: #3498db;
+    }
+
+    .kpi-success {
+        --kpi-color: #27ae60;
+    }
+
+    .kpi-dark {
+        --kpi-color: #2c3e50;
+    }
+
+    .kpi-featured {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+    }
+
+    .kpi-icon {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        font-size: 2rem;
+        opacity: 0.2;
+    }
+
+    .kpi-featured .kpi-icon {
+        opacity: 0.3;
+        color: white;
+    }
+
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+        color: var(--kpi-color, #2c3e50);
+    }
+
+    .kpi-featured .kpi-value {
+        color: white;
+    }
+
+    .kpi-unit {
+        font-size: 1rem;
+        font-weight: 400;
+        opacity: 0.7;
+    }
+
+    .kpi-label {
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.05em;
+    }
+
+    .kpi-featured .kpi-label {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .kpi-subtitle {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-bottom: 1rem;
+    }
+
+    .kpi-trend {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .kpi-progress {
+        margin-top: 1rem;
+    }
+
+    .kpi-progress .progress {
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(0, 0, 0, 0.1);
+        margin-bottom: 0.5rem;
+    }
+
+    /* Analysis Cards */
+    .analysis-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.5rem;
+        border: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .analysis-header {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        padding: 2rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .analysis-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .analysis-subtitle {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    .analysis-body {
+        padding: 2rem;
+    }
+
+    /* Metric Cards */
+    .metric-card {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-best {
+        border-left: 4px solid #27ae60;
+        background: linear-gradient(135deg, rgba(39, 174, 96, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%);
+    }
+
+    .metric-worst {
+        border-left: 4px solid #e74c3c;
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%);
+    }
+
+    .metric-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .metric-icon {
+        font-size: 1.5rem;
+    }
+
+    .metric-type {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-unit {
+        font-size: 0.8rem;
+        opacity: 0.7;
+    }
+
+    .metric-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+
+    .metric-progress .progress {
+        height: 4px;
+        border-radius: 2px;
+    }
+
+    /* Chart Container */
+    .chart-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .chart-loader {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 5;
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    .chart-overlay {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .chart-container:hover .chart-overlay {
+        opacity: 1;
+    }
+
+    /* Empty States */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+
+    .empty-state-small {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: #6c757d;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state-small i {
+        font-size: 3rem;
+        color: #dee2e6;
+        display: block;
+    }
+
+    .empty-title {
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+
+    .empty-description {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+
+    /* Data Tables */
+    .data-table-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.5rem;
+        border: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .data-table-header {
+        background: linear-gradient(135deg, rgba(52, 58, 64, 0.9) 0%, rgba(52, 58, 64, 1) 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .data-table-title {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .data-table-body {
+        padding: 0;
+    }
+
+    .data-table {
+        margin: 0;
+    }
+
+    .data-table thead th {
+        background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+        color: white;
+        border: none;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.05em;
+    }
+
+    .data-table tbody .data-row {
+        transition: all 0.2s ease;
+    }
+
+    .data-table tbody .data-row:hover {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        transform: scale(1.01);
+    }
+
+    .data-table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .equipment-name,
+    .mechanic-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .data-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .failure-count {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+    }
+
+    .mttr-value {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        color: white;
+    }
+
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 1.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .status-critical {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+    }
+
+    .status-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+        color: white;
+    }
+
+    .status-normal,
+    .status-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        color: white;
+    }
+
+    .ranking-badge {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .rank-1 {
+        background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+        color: white;
+    }
+
+    .rank-2 {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        color: white;
+    }
+
+    .rank-3 {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        color: white;
+    }
+
+    .ranking-number {
+        font-weight: 600;
+        color: #6c757d;
+    }
+
+    .os-count {
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    /* Insights Cards */
+    .insights-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.5rem;
+        border: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .insights-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+    }
+
+    .insights-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .insights-subtitle {
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+
+    .insights-body {
+        padding: 2rem;
+    }
+
+    .insight-card {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        height: 100%;
+        text-align: center;
+    }
+
+    .insight-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .insight-icon {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: #667eea;
+    }
+
+    .insight-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .insight-value {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .insight-status {
+        margin-bottom: 1rem;
+    }
+
+    .insight-progress .progress {
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .action-items {
+        text-align: left;
+    }
+
+    .action-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        font-size: 0.875rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .action-item:last-child {
+        border-bottom: none;
+    }
+
+    .action-item.critical {
+        color: #e74c3c;
+    }
+
+    .action-item.warning {
+        color: #f39c12;
+    }
+
+    .action-item.info {
+        color: #3498db;
+    }
+
+    .action-item.success {
+        color: #27ae60;
+    }
+
+    /* Executive Summary */
+    .executive-summary {
+        background: linear-gradient(135deg, rgba(248, 249, 250, 0.8) 0%, rgba(255, 255, 255, 0.9) 100%);
+        border-radius: 1rem;
+        padding: 2rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .summary-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+    }
+
+    .summary-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 2rem;
+    }
+
+    .summary-metric {
+        text-align: center;
+    }
+
+    .summary-value {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-label {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-trend {
+        font-size: 1.2rem;
+    }
+
+    /* Quick Actions */
+    .quick-actions-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.5rem;
+        border: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .quick-actions-header {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .quick-actions-title {
+        margin: 0;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .quick-actions-body {
+        padding: 2rem;
+    }
+
+    .quick-action-btn {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        height: 100%;
+    }
+
+    .quick-action-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        text-decoration: none;
+    }
+
+    .quick-action-btn.primary {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        color: #667eea;
+    }
+
+    .quick-action-btn.warning {
+        background: linear-gradient(135deg, rgba(243, 156, 18, 0.1) 0%, rgba(214, 137, 16, 0.1) 100%);
+        color: #f39c12;
+    }
+
+    .quick-action-btn.success {
+        background: linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(34, 153, 84, 0.1) 100%);
+        color: #27ae60;
+    }
+
+    .quick-action-btn.info {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(41, 128, 185, 0.1) 100%);
+        color: #3498db;
+    }
+
+    .quick-action-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.2rem;
+    }
+
+    .quick-action-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .quick-action-subtitle {
+        font-size: 0.875rem;
+        opacity: 0.8;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes countUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .dashboard-title {
+            font-size: 2rem;
+        }
+
+        .dashboard-header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .dashboard-actions {
+            margin-top: 1rem;
+        }
+
+        .dashboard-actions .btn-group {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .dashboard-actions .btn {
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-card {
+            padding: 1.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+        }
+
+        .analysis-header,
+        .analysis-body,
+        .insights-body {
+            padding: 1.5rem;
+        }
+
+        .summary-metrics {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+        }
+    }
+
+    /* Print Styles */
+    @media print {
+
+        .dashboard-actions,
+        .chart-overlay,
+        .quick-actions-card {
+            display: none !important;
+        }
+
+        .kpi-card,
+        .analysis-card,
+        .insights-card,
+        .data-table-card {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd !important;
+            background: white !important;
+            color: black !important;
+        }
+
+        .dashboard-header {
+            background: white !important;
+            color: black !important;
+        }
+
+        .dashboard-title {
+            color: black !important;
+            -webkit-text-fill-color: black !important;
+        }
+    }
+
+    /* AOS Animation Override */
+    [data-aos] {
+        opacity: 0;
+        transition-property: opacity, transform;
+    }
+
+    [data-aos].aos-animate {
+        opacity: 1;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+
+<script>
+    // Initialize AOS (Animate On Scroll)
+    AOS.init({
+        duration: 800,
+        easing: 'ease-in-out',
+        once: true,
+        offset: 100
+    });
+
+    // Dashboard functionality
+    class DashboardManager {
+        constructor() {
+            this.initializeCounters();
+            this.updateLastUpdateTime();
+            this.setupEventListeners();
+            this.initializeCharts();
+        }
+
+        async initializeCharts() {
+            try {
+                const response = await fetch('/api/stats/dashboard-data');
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                this.renderEquipamentosChart(data.equipamentos);
+                this.renderMecanicosChart(data.mecanicos);
+                this.renderTendenciaChart(data.tendencia);
+
+                // Hide loaders
+                document.querySelectorAll('.chart-loader').forEach(l => l.style.display = 'none');
+
+            } catch (error) {
+                console.error('Erro ao carregar dados dos gráficos:', error);
+                // Mostrar mensagem de erro amigável nos containers
+                document.querySelectorAll('.chart-loader').forEach(l => {
+                    l.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Erro ao carregar dados';
+                });
+            }
+        }
+
+        renderEquipamentosChart(data) {
+            const ctx = document.getElementById('chartEquipamentos').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'MTTR (Horas)',
+                        data: data.values,
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `MTTR: ${context.raw} horas`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Horas' } }
+                    }
+                }
+            });
+        }
+
+        renderMecanicosChart(data) {
+            const ctx = document.getElementById('chartMecanicos').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'MTTR (Horas)',
+                        data: data.values,
+                        backgroundColor: 'rgba(39, 174, 96, 0.7)',
+                        borderColor: 'rgba(39, 174, 96, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        renderTendenciaChart(data) {
+            const ctx = document.getElementById('chartTendencia').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'MTTR Geral',
+                        data: data.values,
+                        fill: true,
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        }
+
+        initializeCounters() {
+            // Animate counters on load
+            const counters = document.querySelectorAll('[data-counter]');
+            counters.forEach((counter, index) => {
+                const target = parseFloat(counter.getAttribute('data-counter'));
+                const isDecimal = target % 1 !== 0;
+                let current = 0;
+                const increment = target / 50;
+
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+
+                    if (isDecimal) {
+                        counter.textContent = current.toFixed(1);
+                    } else {
+                        counter.textContent = Math.floor(current);
+                    }
+                }, 30 + (index * 10)); // Staggered animation
+            });
+        }
+
+        updateLastUpdateTime() {
+            const now = new Date();
+            const options = {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            const timeString = now.toLocaleTimeString('pt-BR', options);
+            document.getElementById('lastUpdate').textContent = `Atualizado às ${timeString}`;
+        }
+
+        setupEventListeners() {
+            // Add hover effects to cards
+            document.querySelectorAll('.kpi-card, .analysis-card, .insight-card').forEach(card => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Add click effects to quick action buttons
+            document.querySelectorAll('.quick-action-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    // Add ripple effect
+                    const ripple = document.createElement('div');
+                    ripple.className = 'ripple';
+                    this.appendChild(ripple);
+
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+
+                    ripple.style.width = ripple.style.height = size + 'px';
+                    ripple.style.left = x + 'px';
+                    ripple.style.top = y + 'px';
+
+                    setTimeout(() => ripple.remove(), 600);
+                });
+            });
+        }
+    }
+
+    // Global functions
+    function refreshDashboard() {
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Atualizando...';
+
+        // Simulate refresh
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    }
+
+    function exportData() {
+        window.location.href = "{{ url_for('main.exportar_excel') }}";
+    }
+
+    function toggleView(viewId) {
+        alert(`Alternando visualização para: ${viewId}`);
+    }
+
+    function downloadChart(chartType) {
+        alert(`Download do gráfico: ${chartType}`);
+    }
+
+    function exportTable(tableType) {
+        if (tableType === 'mecanicos') {
+            window.location.href = "{{ url_for('main.exportar_kpis_mecanico') }}";
+        } else if (tableType === 'equipamentos') {
+            window.location.href = "{{ url_for('main.exportar_excel') }}?filtro=equipamentos";
+        } else {
+            alert(`Exportando tabela: ${tableType}`);
+        }
+    }
+
+    // Initialize dashboard when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function () {
+        new DashboardManager();
+
+        // Add CSS for ripple effect
+        const style = document.createElement('style');
+        style.textContent = `
+        .quick-action-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    `;
+        document.head.appendChild(style);
+    });
+
+    // Update time every minute
+    setInterval(() => {
+        const now = new Date();
+        const options = {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+        const timeString = now.toLocaleTimeString('pt-BR', options);
+        const updateElement = document.getElementById('lastUpdate');
+        if (updateElement) {
+            updateElement.textContent = `Atualizado às ${timeString}`;
+        }
+    }, 60000);
+</script>
+{% endblock %}
