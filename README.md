@@ -1,59 +1,59 @@
-# GDS Maintenance System - RQ MAN – 073 01
+# Sistema de Manutenção GDS - RQ MAN – 073 01
 
-A comprehensive Flask-based web application for managing maintenance orders (OS), equipment, and technical staff. This system streamlines the maintenance workflow from request to completion, including digital signatures and automated notifications.
+Uma aplicação web completa baseada em Flask para gestão de ordens de serviço (OS), equipamentos e equipe técnica. Este sistema otimiza o fluxo de trabalho de manutenção, desde a solicitação até a conclusão, incluindo assinaturas digitais e notificações automatizadas.
 
-## 🚀 Features
+## 🚀 Funcionalidades
 
-- **Maintenance Order Management**: Create, track, and complete maintenance orders.
-- **Workflow Automation**: Automated status transitions (Open -> In Progress -> Completed).
-- **Digital Signatures**: Technical and supervisor digital signatures for verification.
-- **Bulk Import/Export**: Import equipment and locations via Excel; export maintenance history and KPIs.
-- **Analytics Dashboard**: Real-time KPIs for mechanics, equipment downtime, and maintenance types.
-- **User Roles**: Specialized access for Admin, Mechanics, and Standard Users.
-- **Email Notifications**: Automated alerts for new and finalized maintenance activities.
+- **Gestão de Ordens de Serviço**: Criação, acompanhamento e finalização de OS.
+- **Automação de Fluxo**: Transições automáticas de status (Aberta -> Em Andamento -> Concluída).
+- **Assinaturas Digitais**: Coleta de assinaturas do mecânico e do conferente para validação.
+- **Importação/Exportação em Massa**: Importação de equipamentos e localizações via Excel; exportação de histórico de manutenção e KPIs.
+- **Dashboard de Indicadores**: KPIs em tempo real por mecânico, indisponibilidade de equipamentos e tipos de manutenção.
+- **Níveis de Acesso**: Permissões especializadas para Admin, Mecânicos e Usuários Padrão.
+- **Notificações por E-mail**: Alertas automáticos para abertura e finalização de atividades de manutenção.
 
-## 🛠 Technology Stack
+## 🛠 Tecnologias Utilizadas
 
 - **Backend**: Python / Flask
-- **Database**: MySQL 8.0
+- **Banco de Dados**: MySQL 8.0
 - **Frontend**: HTML5, Vanilla CSS, Bootstrap 5, Chart.js
-- **Containerization**: Docker & Docker Compose
-- **Data Processing**: Pandas / Openpyxl (Excel Integration)
+- **Conteinerização**: Docker & Docker Compose
+- **Processamento de Dados**: Pandas / Openpyxl (Integração com Excel)
 
-## 📦 Setup & Installation
+## 📦 Configuração e Instalação
 
-### Prerequisites
-- Docker and Docker Compose installed.
+### Pré-requisitos
+- Docker e Docker Compose instalados.
 
-### Steps
-1. **Clone the repository**:
+### Passos
+1. **Clonar o repositório**:
    ```bash
    git clone https://github.com/dinkeinfo-netizen/manutencao-gds.git
    cd manutencao-gds
    ```
 
-2. **Configure Environment**:
-   Create a `.env` file in the root directory (refer to `.env.example` if available) with the following variables:
-   - `SECRET_KEY`: A secure random string for Flask sessions.
-   - `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`: For email integration.
+2. **Configuração de Ambiente**:
+   Crie um arquivo `.env` na raiz do diretório (use o `.env.example` como referência, se disponível) com as seguintes variáveis:
+   - `SECRET_KEY`: Uma chave aleatória segura para sessões do Flask.
+   - `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`: Para integração de e-mail.
 
-3. **Spin up the containers**:
+3. **Subir os containers**:
    ```bash
    docker-compose up -d --build
    ```
 
-4. **Access the Application**:
-   The system will be available at `http://localhost:5001`.
+4. **Acessar a Aplicação**:
+   O sistema estará disponível em `http://localhost:5001`.
 
-## 🗄 Database Structure
+## 🗄 Estrutura do Banco de Dados
 
-The system uses SQLAlchemy for ORM. Main models include:
-- **Mecanico**: Staff management.
-- **Equipamento**: Machine and asset inventory.
-- **Localizacao**: Physical site management.
-- **OrdemServico**: Centralized maintenance logs, including logs for materials, photos, and signatures.
-- **User**: Authentication and authorization.
+O sistema utiliza SQLAlchemy como ORM. Os principais modelos incluem:
+- **Mecanico**: Gestão da equipe técnica.
+- **Equipamento**: Inventário de máquinas e ativos.
+- **Localizacao**: Gestão de locais físicos.
+- **OrdemServico**: Registro centralizado de manutenções, incluindo materiais, fotos e assinaturas.
+- **User**: Autenticação e autorização de usuários.
 
-## 📄 Documentation
+## 📄 Documentação
 
-Developed and maintained by **DINKE**. Reference: **RQ MAN – 073 01**.
+Desenvolvido e mantido por **DINKE**. Referência: **RQ MAN – 073 01**.
