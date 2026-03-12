@@ -11,7 +11,7 @@ import os
 
 # Configuração básica do Flask para migração
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://manutencao_user:manutencao_pass@db/manutencao_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'postgresql://manutencao_user:manutencao_pass@db:5432/manutencao_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -26,7 +26,7 @@ def executar_migracao_manual():
         
         # SQL para alterar a coluna e torná-la nullable
         sql_commands = [
-            "ALTER TABLE equipamentos MODIFY COLUMN localizacao_id INT NULL;",
+            "ALTER TABLE equipamentos ALTER COLUMN localizacao_id DROP NOT NULL;",
             "UPDATE equipamentos SET localizacao_id = NULL WHERE localizacao_id = 0 OR localizacao_id NOT IN (SELECT id FROM localizacoes);"
         ]
         

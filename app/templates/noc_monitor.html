@@ -197,7 +197,7 @@
     <div class="grid-container">
         {% for os in ordens %}
         <div
-            class="os-card {{ 'status-andamento' if os.status == 'Em Andamento' }} {{ 'urgente' if os.horas_total >= 2 }}">
+            class="os-card {{ 'status-andamento' if os.status == 'Em andamento' }} {{ 'urgente' if os.horas_total >= 2 }}">
             <div class="d-flex justify-content-between align-items-start">
                 <div class="os-number">#{{ os.numero_os }}</div>
                 <span class="status-badge {{ 'badge-aberta' if os.status == 'Aberta' else 'badge-andamento' }}">

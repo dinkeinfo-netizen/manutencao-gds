@@ -38,95 +38,79 @@
 
 <!-- KPI Cards -->
 <div class="row mb-5">
+    <!-- Coluna 1: Volume -->
     <div class="col-lg-2 col-md-4 col-6 mb-4">
         <div class="kpi-card kpi-primary" data-aos="fade-up" data-aos-delay="100">
-            <div class="kpi-icon">
-                <i class="fas fa-clipboard-list"></i>
-            </div>
+            <div class="kpi-icon"><i class="fas fa-clipboard-list"></i></div>
             <div class="kpi-content">
-                <div class="kpi-value" data-counter="{{ total_os }}">0</div>
+                <div class="kpi-value" data-counter="{{ total_os }}">{{ total_os }}</div>
                 <div class="kpi-label">Total de OS</div>
-                <div class="kpi-trend">
-                    <i class="fas fa-arrow-up text-success"></i>
-                    <span class="text-success">+12%</span>
-                </div>
             </div>
         </div>
     </div>
 
     <div class="col-lg-2 col-md-4 col-6 mb-4">
         <div class="kpi-card kpi-warning" data-aos="fade-up" data-aos-delay="200">
-            <div class="kpi-icon">
-                <i class="fas fa-clock"></i>
-            </div>
+            <div class="kpi-icon"><i class="fas fa-clock"></i></div>
             <div class="kpi-content">
-                <div class="kpi-value" data-counter="{{ os_abertas }}">0</div>
+                <div class="kpi-value" data-counter="{{ os_abertas }}">{{ os_abertas }}</div>
                 <div class="kpi-label">OS Abertas</div>
-                <div class="kpi-trend">
-                    <i class="fas fa-minus text-warning"></i>
-                    <span class="text-warning">Estável</span>
-                </div>
             </div>
         </div>
     </div>
 
     <div class="col-lg-2 col-md-4 col-6 mb-4">
         <div class="kpi-card kpi-info" data-aos="fade-up" data-aos-delay="300">
-            <div class="kpi-icon">
-                <i class="fas fa-cogs"></i>
-            </div>
+            <div class="kpi-icon"><i class="fas fa-sync"></i></div>
             <div class="kpi-content">
-                <div class="kpi-value" data-counter="{{ os_andamento }}">0</div>
-                <div class="kpi-label">Em Andamento</div>
-                <div class="kpi-trend">
-                    <i class="fas fa-arrow-up text-info"></i>
-                    <span class="text-info">Ativo</span>
+                <div class="kpi-value" data-counter="{{ os_andamento }}">{{ os_andamento }}</div>
+                <div class="kpi-label">Ativas</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna 2: Engenharia -->
+    <div class="col-lg-2 col-md-4 col-6 mb-4">
+        <div class="kpi-card kpi-dark" data-aos="fade-up" data-aos-delay="400">
+            <div class="kpi-icon"><i class="fas fa-tools"></i></div>
+            <div class="kpi-content">
+                <div class="kpi-value">
+                    <span id="kpi-mttr" data-counter="{{ mttr_geral }}">{{ mttr_geral }}</span><small class="kpi-unit">h</small>
                 </div>
+                <div class="kpi-label">MTTR</div>
+                <small class="text-muted">Reparo</small>
             </div>
         </div>
     </div>
 
     <div class="col-lg-2 col-md-4 col-6 mb-4">
-        <div class="kpi-card kpi-success" data-aos="fade-up" data-aos-delay="400">
-            <div class="kpi-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
+        <div class="kpi-card kpi-dark" data-aos="fade-up" data-aos-delay="500">
+            <div class="kpi-icon"><i class="fas fa-heartbeat"></i></div>
             <div class="kpi-content">
-                <div class="kpi-value" data-counter="{{ os_concluidas }}">0</div>
-                <div class="kpi-label">Concluídas</div>
-                <div class="kpi-trend">
-                    <i class="fas fa-arrow-up text-success"></i>
-                    <span class="text-success">+8%</span>
+                <div class="kpi-value">
+                    <span id="kpi-mtbf" data-counter="{{ mtbf_geral }}">{{ mtbf_geral }}</span><small class="kpi-unit">h</small>
                 </div>
+                <div class="kpi-label">MTBF</div>
+                <small class="text-muted">Entre Falhas</small>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-4 col-md-8 col-12 mb-4">
-        <div class="kpi-card kpi-dark kpi-featured" data-aos="fade-up" data-aos-delay="500">
-            <div class="kpi-icon">
-                <i class="fas fa-stopwatch"></i>
-            </div>
+    <div class="col-lg-2 col-md-4 col-6 mb-4">
+        <div class="kpi-card {% if disponibilidade_geral >= 90 %}kpi-success{% else %}kpi-danger{% endif %}" data-aos="fade-up" data-aos-delay="600">
+            <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
             <div class="kpi-content">
                 <div class="kpi-value">
-                    <span data-counter="{{ mttr_geral }}">0</span><small class="kpi-unit">h</small>
+                    <span id="kpi-disponibilidade" data-counter="{{ disponibilidade_geral }}">{{ disponibilidade_geral }}</span><small class="kpi-unit">%</small>
                 </div>
-                <div class="kpi-label">MTTR Geral</div>
-                <div class="kpi-subtitle">Mean Time To Repair</div>
-                <div class="kpi-progress">
-                    <div class="progress">
-                        <div class="progress-bar {% if mttr_geral <= 4 %}bg-success{% elif mttr_geral <= 6 %}bg-warning{% else %}bg-danger{% endif %}"
-                            style="width: {{ (4 / mttr_geral * 100 if mttr_geral > 4 else 100)|round }}%"></div>
-                    </div>
-                    <small class="text-muted">Meta: 4h</small>
-                </div>
+                <div class="kpi-label">Disponibilidade</div>
+                <small class="text-muted">Meta: 90%</small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MTTR por Tipo -->
-{% if mttr_por_tipo %}
+<!-- Pareto Analysis (Top Equipamentos) -->
 <div class="row mb-5">
     <div class="col-12">
         <div class="analysis-card" data-aos="fade-up">
@@ -134,69 +118,51 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="analysis-title">
-                            <i class="fas fa-wrench me-2"></i>
-                            MTTR por Tipo de Manutenção
+                            <i class="fas fa-bolt me-2 text-warning"></i>
+                            Análise de Pareto - Top 5 Críticos
                         </h4>
-                        <p class="analysis-subtitle">Análise comparativa de performance por categoria</p>
-                    </div>
-                    <div class="analysis-actions">
-                        <button class="btn btn-sm btn-outline-primary" onclick="toggleView('mttr-tipo')">
-                            <i class="fas fa-chart-bar me-1"></i>
-                            Ver Gráfico
-                        </button>
+                        <p class="analysis-subtitle">Equipamentos com maior impacto na disponibilidade (Corretivas 30 dias)</p>
                     </div>
                 </div>
             </div>
             <div class="analysis-body">
-                <div class="row" id="mttr-tipo-cards">
-                    {% for tipo in mttr_por_tipo %}
-                    <div class="col-lg-4 mb-4">
-                        <div
-                            class="metric-card {% if loop.index == 1 %}metric-best{% elif loop.index == mttr_por_tipo|length %}metric-worst{% endif %}">
-                            <div class="metric-header">
-                                <div class="metric-icon">
-                                    {% if tipo.tipo_manutencao == 'Corretiva' %}
-                                    <i class="fas fa-tools text-danger"></i>
-                                    {% elif tipo.tipo_manutencao == 'Preventiva' %}
-                                    <i class="fas fa-shield-alt text-success"></i>
-                                    {% else %}
-                                    <i class="fas fa-cog text-primary"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="metric-badge">
-                                    {% if loop.index == 1 %}
-                                    <span class="badge bg-success">Melhor</span>
-                                    {% elif loop.index == mttr_por_tipo|length %}
-                                    <span class="badge bg-warning">Atenção</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="metric-content">
-                                <h5 class="metric-type">{{ tipo.tipo_manutencao }}</h5>
-                                <div class="metric-value">{{ "%.1f"|format(tipo.mttr) }}<span
-                                        class="metric-unit">h</span></div>
-                                <div class="metric-meta">
-                                    <span class="metric-count">{{ tipo.total_os }} OS concluídas</span>
-                                    <span class="metric-percent">{{ ((tipo.mttr /
-                                        (mttr_por_tipo|map(attribute='mttr')|sum)) * 100)|round }}% do total</span>
-                                </div>
-                            </div>
-                            <div class="metric-progress">
-                                <div class="progress">
-                                    <div class="progress-bar"
-                                        style="width: {{ (tipo.mttr / (mttr_por_tipo|map(attribute='mttr')|max) * 100)|round }}%">
-                                    </div>
-                                </div>
-                            </div>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="table-responsive">
+                            <table class="table data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Equipamento</th>
+                                        <th class="text-center">Falhas</th>
+                                        <th class="text-center">Downtime (h)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pareto-table-body">
+                                    {% for equip in pareto_equipamentos %}
+                                    <tr class="data-row">
+                                        <td class="equipment-name"><strong>{{ equip.nome }}</strong></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger">{{ equip.total_os }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="text-danger fw-bold">{{ "%.1f"|format(equip.total_downtime or 0) }}h</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    {% endfor %}
+                    <div class="col-lg-6">
+                        <div class="chart-container" style="min-height: 250px;">
+                            <canvas id="chartPareto"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 
 <!-- Gráficos Principal -->
 <div class="row mb-5">
@@ -575,7 +541,7 @@
                                 <div class="summary-metric">
                                     <div class="summary-value text-warning">{{ (100 * os_andamento / total_os if
                                         total_os > 0 else 0)|round }}%</div>
-                                    <div class="summary-label">Em Andamento</div>
+                                    <div class="summary-label">Em andamento</div>
                                     <div class="summary-trend">
                                         <i class="fas fa-minus text-warning"></i>
                                     </div>
@@ -633,7 +599,7 @@
                                 <i class="fas fa-cogs"></i>
                             </div>
                             <div class="quick-action-content">
-                                <div class="quick-action-title">Em Andamento</div>
+                                <div class="quick-action-title">Em andamento</div>
                                 <div class="quick-action-subtitle">{{ os_andamento }} OS ativas</div>
                             </div>
                         </a>
@@ -1500,20 +1466,65 @@
 
                 if (data.error) throw new Error(data.error);
 
-                this.renderEquipamentosChart(data.equipamentos);
+                // Atualizar KPIs nos cards
+                if (data.kpis) {
+                    this.updateKPICard('kpi-mttr', data.kpis.mttr);
+                    this.updateKPICard('kpi-mtbf', data.kpis.mtbf);
+                    this.updateKPICard('kpi-disponibilidade', data.kpis.disponibilidade);
+                }
+
+                // Renderizar Gráficos
+                this.renderEquipamentosChart(data.mttr_equipamentos);
                 this.renderMecanicosChart(data.mecanicos);
                 this.renderTendenciaChart(data.tendencia);
+                this.renderParetoChart(data.pareto);
+
+                // Atualizar Tabela Pareto
+                if (data.pareto && data.pareto.labels) {
+                    this.updateParetoTable(data.pareto);
+                }
 
                 // Hide loaders
                 document.querySelectorAll('.chart-loader').forEach(l => l.style.display = 'none');
 
             } catch (error) {
                 console.error('Erro ao carregar dados dos gráficos:', error);
-                // Mostrar mensagem de erro amigável nos containers
                 document.querySelectorAll('.chart-loader').forEach(l => {
                     l.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Erro ao carregar dados';
                 });
             }
+        }
+
+        updateKPICard(id, value) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = value;
+                // Reiniciar animação se necessário
+                el.setAttribute('data-target', value);
+            }
+        }
+
+        updateParetoTable(data) {
+            const tableBody = document.getElementById('pareto-table-body');
+            if (!tableBody) return;
+
+            let html = '';
+            for (let i = 0; i < data.labels.length; i++) {
+                html += `
+                    <tr class="data-row">
+                        <td class="equipment-name"><strong>${data.labels[i]}</strong></td>
+                        <td class="text-center">
+                            <span class="badge bg-danger">Calculando...</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="text-danger fw-bold">${data.values[i]}h</span>
+                        </td>
+                    </tr>
+                `;
+            }
+            // Nota: Falhas (count) seria ideal vir no JSON também se quisermos atualizar a tabela inteira via JS
+            // Por enquanto atualizamos apenas o downtime se necessário ou mantemos a estrutura inicial
+            tableBody.innerHTML = html;
         }
 
         renderEquipamentosChart(data) {
@@ -1603,6 +1614,43 @@
                     scales: {
                         y: { beginAtZero: false }
                     }
+                }
+            });
+        }
+
+        renderParetoChart(data) {
+            const ctx = document.getElementById('chartPareto').getContext('2d');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.values,
+                        backgroundColor: [
+                            'rgba(231, 76, 60, 0.8)',
+                            'rgba(230, 126, 34, 0.8)',
+                            'rgba(241, 196, 15, 0.8)',
+                            'rgba(52, 152, 219, 0.8)',
+                            'rgba(155, 89, 182, 0.8)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `Downtime: ${context.raw}h`
+                            }
+                        }
+                    },
+                    cutout: '70%'
                 }
             });
         }

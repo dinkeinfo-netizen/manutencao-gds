@@ -1,0 +1,122 @@
+{% extends "config/base_config.html" %}
+{% set active_page = "checklists" %}
+
+{% block config_content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Novo Template de Checklist</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('main.novo_checklist') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3">
+                        <label class="form-label">Nome do Checklist</label>
+                        <input type="text" name="nome" class="form-control" placeholder="Ex: Inspeção Semanal Motor" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição (Opcional)</label>
+                        <textarea name="descricao" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Criar Checklist</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-link me-2"></i>Associar Checklist a Equipamento</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('main.associar_checklist_equipamento') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3">
+                        <label class="form-label">Equipamento</label>
+                        <select name="equipamento_id" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% for eq in equipamentos %}
+                            <option value="{{ eq.id }}">{{ eq.codigo }} - {{ eq.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Template de Checklist</label>
+                        <select name="template_id" class="form-select" required>
+                            <option value="0">Nenhum (Remover)</option>
+                            {% for temp in templates %}
+                            <option value="{{ temp.id }}">{{ temp.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-info text-white w-100">Atualizar Associação</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <h4>Templates Cadastrados</h4>
+    <div class="accordion" id="accordionChecklists">
+        {% for template in templates %}
+        <div class="accordion-item shadow-sm mb-2">
+            <h2 class="accordion-header" id="heading{{ template.id }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ template.id }}">
+                    <strong>{{ template.nome }}</strong> 
+                    <span class="badge bg-secondary ms-2">{{ template.itens|length }} itens</span>
+                </button>
+            </h2>
+            <div id="collapse{{ template.id }}" class="accordion-collapse collapse" data-bs-parent="#accordionChecklists">
+                <div class="accordion-body">
+                    <p class="text-muted small">{{ template.descricao or 'Sem descrição.' }}</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Pergunta / Item</th>
+                                    <th width="100">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in template.itens %}
+                                <tr>
+                                    <td>{{ item.pergunta }}</td>
+                                    <td>
+                                        <form action="{{ url_for('main.excluir_item_checklist', id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Excluir este item?')">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="btn btn-link text-danger p-0" title="Excluir item"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form action="{{ url_for('main.novo_item_checklist', template_id=template.id) }}" method="POST" class="mt-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="pergunta" class="form-control" placeholder="Adicionar nova verificação/pergunta..." required>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-plus me-1"></i>Adicionar Item
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="d-flex justify-content-end mt-2">
+                        <form action="{{ url_for('main.excluir_checklist', id=template.id) }}" method="POST" onsubmit="return confirm('EXCLUIR TODO O CHECKLIST? Isso não pode ser desfeito.')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Excluir Template</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

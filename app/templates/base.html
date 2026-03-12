@@ -384,19 +384,8 @@
             /* Future dark mode styles */
         }
 
-        /* Forçar z-index e overflow padrão do Bootstrap para modal */
-        .modal,
-        .modal-backdrop {
-            z-index: 1050 !important;
-        }
-
-        body.modal-open {
-            overflow: hidden !important;
-        }
-
         /* Corrigir possíveis problemas de blur/filtro no modal */
         .modal-backdrop {
-            backdrop-filter: none !important;
             background: rgba(0, 0, 0, 0.5) !important;
         }
     </style>
@@ -514,6 +503,7 @@
         });
     </script>
 
+    {% block extra_body %}{% endblock %}
     {% block js %}{% endblock %}
 </body>
 

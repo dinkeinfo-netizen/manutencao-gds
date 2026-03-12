@@ -84,109 +84,142 @@
             </div>
         </div>
 
-        <!-- Checklist Melhorado -->
         <div class="card mb-4">
             <div class="card-header bg-warning text-dark">
                 <i class="bi bi-clipboard-check me-2"></i>
-                <strong>Check List de Verificação Pós Manutenção – RQ MAN – 066/01</strong>
+                {% if os.equipamento.checklist_template %}
+                    <strong>Checklist: {{ os.equipamento.checklist_template.nome }}</strong>
+                {% else %}
+                    <strong>Check List de Verificação Pós Manutenção – RQ MAN – 066/01</strong>
+                {% endif %}
             </div>
             <div class="card-body">
-                <div class="row">
-                    <!-- Há graxa/óleo escorrendo? -->
-                    <div class="col-md-6 mb-4">
-                        <div class="question-container">
-                            <label class="form-label fw-bold">
-                                <i class="bi bi-droplet me-2 text-primary"></i>
-                                Há graxa/óleo escorrendo?
-                            </label>
-                            <div class="radio-group">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="graxa_oleo" id="graxa_sim" value="sim" required>
-                                    <label class="form-check-label text-danger fw-bold" for="graxa_sim">
-                                        <i class="bi bi-x-circle me-1"></i>SIM
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="graxa_oleo" id="graxa_nao" value="nao">
-                                    <label class="form-check-label text-success fw-bold" for="graxa_nao">
-                                        <i class="bi bi-check-circle me-1"></i>NÃO
-                                    </label>
+                <div class="row" id="checklistContainer">
+                    {% if os.equipamento.checklist_template %}
+                        {% for item in os.equipamento.checklist_template.itens %}
+                        <div class="col-md-6 mb-4">
+                            <div class="question-container dynamic-question">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-patch-check me-2 text-primary"></i>
+                                    {{ item.pergunta }}
+                                </label>
+                                <div class="radio-group">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input dynamic-checklist-item" type="radio" 
+                                               name="checklist_item_{{ item.id }}" id="item_{{ item.id }}_sim" value="sim" required>
+                                        <label class="form-check-label text-success fw-bold" for="item_{{ item.id }}_sim">
+                                            <i class="bi bi-check-circle me-1"></i>SIM (OK)
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input dynamic-checklist-item" type="radio" 
+                                               name="checklist_item_{{ item.id }}" id="item_{{ item.id }}_nao" value="nao">
+                                        <label class="form-check-label text-danger fw-bold" for="item_{{ item.id }}_nao">
+                                            <i class="bi bi-x-circle me-1"></i>NÃO (N/A)
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Manter itens atuais se não houver template -->
+                        <!-- Há graxa/óleo escorrendo? -->
+                        <div class="col-md-6 mb-4">
+                            <div class="question-container">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-droplet me-2 text-primary"></i>
+                                    Há graxa/óleo escorrendo?
+                                </label>
+                                <div class="radio-group">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="graxa_oleo" id="graxa_sim" value="sim" required>
+                                        <label class="form-check-label text-danger fw-bold" for="graxa_sim">
+                                            <i class="bi bi-x-circle me-1"></i>SIM
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="graxa_oleo" id="graxa_nao" value="nao">
+                                        <label class="form-check-label text-success fw-bold" for="graxa_nao">
+                                            <i class="bi bi-check-circle me-1"></i>NÃO
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                    <!-- Limpeza realizada? -->
-                    <div class="col-md-6 mb-4">
-                        <div class="question-container">
-                            <label class="form-label fw-bold">
-                                <i class="bi bi-brush me-2 text-primary"></i>
-                                Limpeza realizada?
-                            </label>
-                            <div class="radio-group">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="limpeza" id="limpeza_sim" value="sim" required>
-                                    <label class="form-check-label text-success fw-bold" for="limpeza_sim">
-                                        <i class="bi bi-check-circle me-1"></i>SIM
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="limpeza" id="limpeza_nao" value="nao">
-                                    <label class="form-check-label text-danger fw-bold" for="limpeza_nao">
-                                        <i class="bi bi-x-circle me-1"></i>NÃO
-                                    </label>
+                        <!-- Limpeza realizada? -->
+                        <div class="col-md-6 mb-4">
+                            <div class="question-container">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-brush me-2 text-primary"></i>
+                                    Limpeza realizada?
+                                </label>
+                                <div class="radio-group">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="limpeza" id="limpeza_sim" value="sim" required>
+                                        <label class="form-check-label text-success fw-bold" for="limpeza_sim">
+                                            <i class="bi bi-check-circle me-1"></i>SIM
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="limpeza" id="limpeza_nao" value="nao">
+                                        <label class="form-check-label text-danger fw-bold" for="limpeza_nao">
+                                            <i class="bi bi-x-circle me-1"></i>NÃO
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Peças soltas? -->
-                    <div class="col-md-6 mb-4">
-                        <div class="question-container">
-                            <label class="form-label fw-bold">
-                                <i class="bi bi-nut me-2 text-primary"></i>
-                                Peças soltas?
-                            </label>
-                            <div class="radio-group">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="pecas_soltas" id="pecas_sim" value="sim" required>
-                                    <label class="form-check-label text-danger fw-bold" for="pecas_sim">
-                                        <i class="bi bi-x-circle me-1"></i>SIM
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="pecas_soltas" id="pecas_nao" value="nao">
-                                    <label class="form-check-label text-success fw-bold" for="pecas_nao">
-                                        <i class="bi bi-check-circle me-1"></i>NÃO
-                                    </label>
+                        <!-- Peças soltas? -->
+                        <div class="col-md-6 mb-4">
+                            <div class="question-container">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-nut me-2 text-primary"></i>
+                                    Peças soltas?
+                                </label>
+                                <div class="radio-group">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="pecas_soltas" id="pecas_sim" value="sim" required>
+                                        <label class="form-check-label text-danger fw-bold" for="pecas_sim">
+                                            <i class="bi bi-x-circle me-1"></i>SIM
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="pecas_soltas" id="pecas_nao" value="nao">
+                                        <label class="form-check-label text-success fw-bold" for="pecas_nao">
+                                            <i class="bi bi-check-circle me-1"></i>NÃO
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Equipamento liberado? -->
-                    <div class="col-md-6 mb-4">
-                        <div class="question-container">
-                            <label class="form-label fw-bold">
-                                <i class="bi bi-unlock me-2 text-primary"></i>
-                                Equipamento liberado para operação?
-                            </label>
-                            <div class="radio-group">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="equipamento_liberado" id="liberado_sim" value="sim" required>
-                                    <label class="form-check-label text-success fw-bold" for="liberado_sim">
-                                        <i class="bi bi-check-circle me-1"></i>SIM
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="equipamento_liberado" id="liberado_nao" value="nao">
-                                    <label class="form-check-label text-danger fw-bold" for="liberado_nao">
-                                        <i class="bi bi-x-circle me-1"></i>NÃO
-                                    </label>
+                        <!-- Equipamento liberado? -->
+                        <div class="col-md-6 mb-4">
+                            <div class="question-container">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-unlock me-2 text-primary"></i>
+                                    Equipamento liberado para operação?
+                                </label>
+                                <div class="radio-group">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="equipamento_liberado" id="liberado_sim" value="sim" required>
+                                        <label class="form-check-label text-success fw-bold" for="liberado_sim">
+                                            <i class="bi bi-check-circle me-1"></i>SIM
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="equipamento_liberado" id="liberado_nao" value="nao">
+                                        <label class="form-check-label text-danger fw-bold" for="liberado_nao">
+                                            <i class="bi bi-x-circle me-1"></i>NÃO
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Resumo do Checklist -->
@@ -677,10 +710,13 @@ class FinalizarOSSystem {
             return false;
         }
         
-        // Validar checklist
-        const checklistItems = ['graxa_oleo', 'limpeza', 'pecas_soltas', 'equipamento_liberado'];
-        for (let item of checklistItems) {
-            const checked = document.querySelector(`input[name="${item}"]:checked`);
+        // Validar checklist dinâmico ou padrão
+        const checklistInputs = document.querySelectorAll('#checklistContainer input[type="radio"]:required');
+        const groups = new Set();
+        checklistInputs.forEach(input => groups.add(input.name));
+        
+        for (let name of groups) {
+            const checked = document.querySelector(`input[name="${name}"]:checked`);
             if (!checked) {
                 this.showNotification(`Por favor, responda todas as verificações do checklist.`, 'error');
                 return false;
@@ -726,16 +762,13 @@ class FinalizarOSSystem {
     }
     
     setupChecklist() {
-        const checklistItems = ['graxa_oleo', 'limpeza', 'pecas_soltas', 'equipamento_liberado'];
-        
-        checklistItems.forEach(item => {
-            const radios = document.querySelectorAll(`input[name="${item}"]`);
-            radios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    this.updateChecklistSummary();
-                    this.updateQuestionVisualState(item);
-                });
-            });
+        // Delegar eventos para suportar itens dinâmicos
+        const container = document.getElementById('checklistContainer');
+        container.addEventListener('change', (e) => {
+            if (e.target.type === 'radio') {
+                this.updateChecklistSummary();
+                this.updateQuestionVisualState(e.target.name);
+            }
         });
     }
     
@@ -763,67 +796,39 @@ class FinalizarOSSystem {
     
     updateChecklistSummary() {
         const summary = document.getElementById('checklistSummary');
-        const items = [
-            { name: 'graxa_oleo', label: 'Graxa/Óleo', goodValue: 'nao' },
-            { name: 'limpeza', label: 'Limpeza', goodValue: 'sim' },
-            { name: 'pecas_soltas', label: 'Peças Soltas', goodValue: 'nao' },
-            { name: 'equipamento_liberado', label: 'Equipamento Liberado', goodValue: 'sim' }
-        ];
+        const inputs = document.querySelectorAll('#checklistContainer input[type="radio"]:checked');
         
+        if (inputs.length === 0) {
+            summary.innerHTML = '<small class="text-muted">Preencha as verificações acima para ver o resumo</small>';
+            return;
+        }
+
         let html = '<div class="row">';
-        let allGood = true;
-        let problemsFound = [];
+        let totalItems = document.querySelectorAll('#checklistContainer .question-container').length;
+        let respondedItems = inputs.length;
         
-        items.forEach(item => {
-            const checked = document.querySelector(`input[name="${item.name}"]:checked`);
-            if (checked) {
-                const isGood = checked.value === item.goodValue;
-                const icon = isGood ? 'bi-check-circle text-success' : 'bi-x-circle text-danger';
-                const status = checked.value === 'sim' ? 'SIM' : 'NÃO';
-                const statusClass = isGood ? 'text-success' : 'text-danger';
-                
-                if (!isGood) {
-                    allGood = false;
-                    // Adicionar à lista de problemas
-                    let problemText = '';
-                    if (item.name === 'graxa_oleo' && checked.value === 'sim') {
-                        problemText = 'Há vazamento de graxa/óleo!';
-                    } else if (item.name === 'limpeza' && checked.value === 'nao') {
-                        problemText = 'Limpeza não foi realizada!';
-                    } else if (item.name === 'pecas_soltas' && checked.value === 'sim') {
-                        problemText = 'Existem peças soltas!';
-                    } else if (item.name === 'equipamento_liberado' && checked.value === 'nao') {
-                        problemText = 'Equipamento NÃO liberado para operação!';
-                    }
-                    if (problemText) problemsFound.push(problemText);
-                }
-                
-                html += `
-                    <div class="col-md-3 mb-2">
-                        <small>
-                            <i class="bi ${icon} me-1"></i>
-                            <strong>${item.label}:</strong> 
-                            <span class="${statusClass} fw-bold">${status}</span>
-                        </small>
-                    </div>
-                `;
-            }
+        inputs.forEach(input => {
+            const label = input.closest('.question-container').querySelector('label').innerText.trim();
+            const value = input.value === 'sim' ? 'SIM' : 'NÃO';
+            const isOk = input.value === 'sim' || (input.name === 'graxa_oleo' && input.value === 'nao') || (input.name === 'pecas_soltas' && input.value === 'nao'); 
+            // Nota: Para checklists dinâmicos, assumimos 'sim' como OK. Para os antigos, temos lógica específica.
+            
+            const icon = input.value === 'sim' ? 'bi-check-circle text-success' : 'bi-x-circle text-danger';
+            
+            html += `
+                <div class="col-md-4 mb-2">
+                    <small>
+                        <i class="bi ${icon} me-1"></i>
+                        <strong>${label.substring(0, 20)}...:</strong> ${value}
+                    </small>
+                </div>
+            `;
         });
         
         html += '</div>';
         
-        // Mostrar resultado final
-        if (allGood && items.every(item => document.querySelector(`input[name="${item.name}"]:checked`))) {
-            html += '<div class="alert alert-success mt-2 mb-0"><i class="bi bi-check-circle me-2"></i><strong>✅ Todas as verificações estão OK! Equipamento liberado.</strong></div>';
-        } else if (problemsFound.length > 0) {
-            html += '<div class="alert alert-danger mt-2 mb-0">';
-            html += '<i class="bi bi-exclamation-triangle me-2"></i><strong>⚠️ Problemas encontrados:</strong><ul class="mb-0 mt-2">';
-            problemsFound.forEach(problem => {
-                html += `<li>${problem}</li>`;
-            });
-            html += '</ul></div>';
-        } else {
-            html += '<div class="alert alert-warning mt-2 mb-0"><i class="bi bi-clock me-2"></i><strong>Complete todas as verificações para ver o resultado.</strong></div>';
+        if (respondedItems === totalItems) {
+            html += '<div class="alert alert-success mt-2 mb-0 py-2 small"><i class="bi bi-check-circle me-2"></i><strong>Checklist completo!</strong></div>';
         }
         
         summary.innerHTML = html;

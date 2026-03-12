@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app, send_file
 from app.forms import OrdemServicoForm, MecanicoForm, EquipamentoForm, LocalizacaoForm, FinalizarOSForm, EditUserForm, ResetPasswordForm
 from app.extensions import db
-from app.models import Mecanico, Equipamento, Localizacao, OrdemServico, User
+from app.models import Mecanico, Equipamento, Localizacao, OrdemServico, User, ChecklistTemplate, ChecklistItem, ChecklistResposta
 from app.email_service import enviar_email_nova_os, enviar_email_os_finalizada
 from datetime import datetime, timedelta
 import pandas as pd
@@ -106,6 +106,11 @@ def calcular_tempo_manutencao(inicio, termino):
 @login_required
 def index():
     return render_template('index.html')
+
+@main_bp.route('/manual')
+@login_required
+def manual():
+    return render_template('manual.html')
 
 ## lancar os
 
@@ -364,6 +369,21 @@ def finalizar_os(os_id):
             current_app.logger.info(f"  - pecas_soltas: {ordem_servico.pecas_soltas} (tipo: {type(ordem_servico.pecas_soltas)})")
             current_app.logger.info(f"  - equipamento_liberado: {ordem_servico.equipamento_liberado} (tipo: {type(ordem_servico.equipamento_liberado)})")
 
+            # Processar checklist dinâmico
+            for key, value in request.form.items():
+                if key.startswith('checklist_item_'):
+                    try:
+                        item_id = int(key.replace('checklist_item_', ''))
+                        valor_bool = (value == 'sim')
+                        resposta = ChecklistResposta(
+                            ordem_servico_id=os_id,
+                            checklist_item_id=item_id,
+                            valor=valor_bool
+                        )
+                        db.session.add(resposta)
+                    except (ValueError, TypeError):
+                        continue
+
             db.session.commit()
             
             # Enviar email de finalização (opcional)
@@ -407,110 +427,171 @@ def finalizar_os(os_id):
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    # Estatísticas básicas para o carregamento inicial dos cards
+    # Estatísticas básicas
     total_os = OrdemServico.query.count()
     os_abertas = OrdemServico.query.filter_by(status='Aberta').count()
     os_andamento = OrdemServico.query.filter_by(status='Em andamento').count()
     os_concluidas = OrdemServico.query.filter_by(status='Concluída').count()
     
-    # MTTR Geral (apenas o valor numérico)
+    # Período de análise (últimos 30 dias)
+    hoje = datetime.now()
+    inicio_periodo = hoje - timedelta(days=30)
+    horas_totais_periodo = 30 * 24
+
+    # MTTR Geral (Apenas Corretivas Concluídas no período)
     mttr_geral = db.session.query(
         func.avg(OrdemServico.tempo_manutencao)
     ).filter(
         OrdemServico.status == 'Concluída',
-        OrdemServico.tempo_manutencao.isnot(None),
-        OrdemServico.tempo_manutencao > 0
+        OrdemServico.tipo_manutencao == 'corretiva',
+        OrdemServico.data_termino >= inicio_periodo,
+        OrdemServico.tempo_manutencao.isnot(None)
     ).scalar() or 0
 
-    # Dados para as tabelas (mantidos para SEO/Acessibilidade inicial)
+    # Downtime Total (Soma de tempo_manutencao de corretivas no período)
+    downtime_total = db.session.query(
+        func.sum(OrdemServico.tempo_manutencao)
+    ).filter(
+        OrdemServico.status == 'Concluída',
+        OrdemServico.tipo_manutencao == 'corretiva',
+        OrdemServico.data_termino >= inicio_periodo
+    ).scalar() or 0
+
+    # Número de Falhas (Corretivas no período)
+    num_falhas = OrdemServico.query.filter(
+        OrdemServico.status == 'Concluída',
+        OrdemServico.tipo_manutencao == 'corretiva',
+        OrdemServico.data_termino >= inicio_periodo
+    ).count()
+
+    # MTBF (Mean Time Between Failures)
+    # Lógica: (Tempo Total - Tempo de Parada) / Número de Falhas
+    mtbf_geral = 0
+    if num_falhas > 0:
+        mtbf_geral = (horas_totais_periodo - downtime_total) / num_falhas
+
+    # Disponibilidade (%)
+    # Lógica: (Tempo Total - Tempo de Parada) / Tempo Total * 100
+    disponibilidade_geral = ((horas_totais_periodo - downtime_total) / horas_totais_periodo) * 100
+
+    # Pareto: Top 5 equipamentos que geram mais corretivas
+    pareto_equipamentos = db.session.query(
+        Equipamento.nome,
+        func.count(OrdemServico.id).label('total_os'),
+        func.sum(OrdemServico.tempo_manutencao).label('total_downtime')
+    ).join(OrdemServico).filter(
+        OrdemServico.tipo_manutencao == 'corretiva',
+        OrdemServico.data_inicio >= inicio_periodo
+    ).group_by(Equipamento.id).order_by(func.count(OrdemServico.id).desc()).limit(5).all()
+
+    # MTTR por Mecânico (Concluídas)
     mttr_por_mecanico = db.session.query(
         Mecanico.nome,
         func.avg(OrdemServico.tempo_manutencao).label('mttr'),
         func.count(OrdemServico.id).label('total_os')
     ).join(OrdemServico).filter(
         OrdemServico.status == 'Concluída',
-        OrdemServico.tempo_manutencao.isnot(None),
-        OrdemServico.tempo_manutencao > 0
+        OrdemServico.tempo_manutencao.isnot(None)
     ).group_by(Mecanico.id).order_by(func.avg(OrdemServico.tempo_manutencao).asc()).all()
-
-    mttr_por_tipo = db.session.query(
-        OrdemServico.tipo_manutencao,
-        func.avg(OrdemServico.tempo_manutencao).label('mttr'),
-        func.count(OrdemServico.id).label('total_os')
-    ).filter(
-        OrdemServico.status == 'Concluída',
-        OrdemServico.tempo_manutencao.isnot(None),
-        OrdemServico.tempo_manutencao > 0
-    ).group_by(OrdemServico.tipo_manutencao).all()
-
-    equipamentos = db.session.query(
-        Equipamento.nome,
-        func.count(OrdemServico.id).label('total_os')
-    ).join(OrdemServico).group_by(Equipamento.id).order_by(func.count(OrdemServico.id).desc()).limit(5).all()
 
     return render_template('dashboard.html',
                          total_os=total_os,
                          os_abertas=os_abertas,
                          os_andamento=os_andamento,
                          os_concluidas=os_concluidas,
-                         mttr_geral=round(mttr_geral, 2),
-                         mttr_por_mecanico=mttr_por_mecanico,
-                         mttr_por_tipo=mttr_por_tipo,
-                         equipamentos=equipamentos)
+                         mttr_geral=round(float(mttr_geral), 2),
+                         mtbf_geral=round(float(mtbf_geral), 2),
+                         disponibilidade_geral=round(float(disponibilidade_geral), 2),
+                         pareto_equipamentos=pareto_equipamentos,
+                         mttr_por_mecanico=mttr_por_mecanico)
 
 @main_bp.route('/api/stats/dashboard-data')
 @login_required
 def api_dashboard_data():
     """Retorna todos os dados de indicadores para os gráficos Chart.js"""
     try:
-        # MTTR por Equipamento (Top 10 piores)
-        mttr_por_equipamento = db.session.query(
-            Equipamento.nome,
-            Equipamento.codigo,
-            func.avg(OrdemServico.tempo_manutencao).label('mttr'),
-            func.count(OrdemServico.id).label('total_os')
-        ).join(OrdemServico).filter(
-            OrdemServico.status == 'Concluída',
-            OrdemServico.tempo_manutencao.isnot(None),
-            OrdemServico.tempo_manutencao > 0
-        ).group_by(Equipamento.id).having(
-            func.count(OrdemServico.id) >= 2
-        ).order_by(func.avg(OrdemServico.tempo_manutencao).desc()).limit(10).all()
+        hoje = datetime.now()
+        inicio_periodo = hoje - timedelta(days=30)
+        horas_totais_periodo = 30 * 24
 
-        # MTTR por Mecânico
-        mttr_por_mecanico = db.session.query(
-            Mecanico.nome,
+        # MTTR (Corretivas Concluídas)
+        mttr_data = db.session.query(
+            Equipamento.codigo,
             func.avg(OrdemServico.tempo_manutencao).label('mttr')
         ).join(OrdemServico).filter(
             OrdemServico.status == 'Concluída',
-            OrdemServico.tempo_manutencao.isnot(None),
-            OrdemServico.tempo_manutencao > 0
-        ).group_by(Mecanico.id).order_by(func.avg(OrdemServico.tempo_manutencao).asc()).limit(10).all()
+            OrdemServico.tipo_manutencao == 'corretiva',
+            OrdemServico.data_termino >= inicio_periodo,
+            OrdemServico.tempo_manutencao.isnot(None)
+        ).group_by(Equipamento.id).order_by(func.avg(OrdemServico.tempo_manutencao).desc()).limit(10).all()
 
-        # Tendência MTTR (últimos 30 dias)
-        trinta_dias_atras = datetime.now() - timedelta(days=30)
+        # Tendência MTTR
         mttr_tendencia = db.session.query(
             func.date(OrdemServico.data_termino).label('data'),
             func.avg(OrdemServico.tempo_manutencao).label('mttr')
         ).filter(
             OrdemServico.status == 'Concluída',
-            OrdemServico.data_termino >= trinta_dias_atras,
-            OrdemServico.tempo_manutencao.isnot(None),
-            OrdemServico.tempo_manutencao > 0
+            OrdemServico.tipo_manutencao == 'corretiva',
+            OrdemServico.data_termino >= inicio_periodo
         ).group_by(func.date(OrdemServico.data_termino)).order_by('data').all()
 
+        # Downtime por Equipamento (Pareto)
+        pareto_data = db.session.query(
+            Equipamento.codigo,
+            func.sum(OrdemServico.tempo_manutencao).label('downtime')
+        ).join(OrdemServico).filter(
+            OrdemServico.tipo_manutencao == 'corretiva',
+            OrdemServico.data_inicio >= inicio_periodo
+        ).group_by(Equipamento.id).order_by(func.sum(OrdemServico.tempo_manutencao).desc()).limit(5).all()
+
+        # Performance Mecânicos
+        mttr_mecanicos = db.session.query(
+            Mecanico.nome,
+            func.avg(OrdemServico.tempo_manutencao).label('mttr')
+        ).join(OrdemServico).filter(
+            OrdemServico.status == 'Concluída',
+            OrdemServico.tempo_manutencao.isnot(None),
+            OrdemServico.data_termino >= inicio_periodo
+        ).group_by(Mecanico.id).order_by(func.avg(OrdemServico.tempo_manutencao).asc()).all()
+
+        # KPIs Gerais
+        downtime_total = db.session.query(func.sum(OrdemServico.tempo_manutencao)).filter(
+            OrdemServico.status == 'Concluída',
+            OrdemServico.tipo_manutencao == 'corretiva',
+            OrdemServico.data_termino >= inicio_periodo
+        ).scalar() or 0
+        
+        num_falhas = OrdemServico.query.filter(
+            OrdemServico.status == 'Concluída',
+            OrdemServico.tipo_manutencao == 'corretiva',
+            OrdemServico.data_termino >= inicio_periodo
+        ).count()
+
+        mttr_geral = downtime_total / num_falhas if num_falhas > 0 else 0
+        mtbf_geral = (horas_totais_periodo - downtime_total) / num_falhas if num_falhas > 0 else 0
+        disponibilidade = ((horas_totais_periodo - downtime_total) / horas_totais_periodo) * 100
+
         return jsonify({
-            'equipamentos': {
-                'labels': [f"{eq.codigo} - {eq.nome[:15]}" for eq in mttr_por_equipamento],
-                'values': [round(float(eq.mttr), 2) for eq in mttr_por_equipamento]
+            'kpis': {
+                'mttr': round(float(mttr_geral or 0), 2),
+                'mtbf': round(float(mtbf_geral or 0), 2),
+                'disponibilidade': round(float(disponibilidade or 0), 2)
             },
-            'mecanicos': {
-                'labels': [mec.nome for mec in mttr_por_mecanico],
-                'values': [round(float(mec.mttr), 2) for mec in mttr_por_mecanico]
+            'pareto': {
+                'labels': [item.codigo for item in pareto_data],
+                'values': [round(float(item.downtime or 0), 2) for item in pareto_data]
+            },
+            'mttr_equipamentos': {
+                'labels': [item.codigo for item in mttr_data],
+                'values': [round(float(item.mttr or 0), 2) for item in mttr_data]
             },
             'tendencia': {
                 'labels': [item.data.strftime('%d/%m') for item in mttr_tendencia],
-                'values': [round(float(item.mttr), 2) for item in mttr_tendencia]
+                'values': [round(float(item.mttr or 0), 2) for item in mttr_tendencia]
+            },
+            'mecanicos': {
+                'labels': [item.nome for item in mttr_mecanicos],
+                'values': [round(float(item.mttr or 0), 2) for item in mttr_mecanicos]
             }
         })
     except Exception as e:
@@ -1093,12 +1174,17 @@ def importar_configuracoes():
             return redirect(request.referrer)
 
         # Lendo o Excel
-        df_equipamentos = pd.read_excel(file, sheet_name='Equipamentos')
-        df_localizacoes = pd.read_excel(file, sheet_name='Localizacoes')
+        xl = pd.ExcelFile(file)
+        if 'Equipamentos' not in xl.sheet_names or 'Localizacoes' not in xl.sheet_names:
+            flash('O arquivo deve conter as abas "Equipamentos" e "Localizacoes".', 'danger')
+            return redirect(request.referrer)
+
+        df_equipamentos = pd.read_excel(xl, sheet_name='Equipamentos')
+        df_localizacoes = pd.read_excel(xl, sheet_name='Localizacoes')
         
         counts = {'equipamentos': 0, 'localizacoes': 0}
         
-        # Importar Localizações primeiro
+        # 1. Importar Localizações primeiro (para garantir que existam para o vínculo)
         for _, row in df_localizacoes.iterrows():
             codigo = str(row['Codigo']).strip()
             nome = str(row['Nome']).strip()
@@ -1114,21 +1200,34 @@ def importar_configuracoes():
             else:
                 localizacao.nome = nome
         
-        # Importar Equipamentos
+        # Commit localizações para garantir que os IDs estejam disponíveis
+        db.session.flush()
+        
+        # 2. Importar Equipamentos com vínculo
         for _, row in df_equipamentos.iterrows():
             codigo = str(row['Codigo']).strip()
             nome = str(row['Nome']).strip()
+            # Nova coluna para vínculo
+            codigo_loc = str(row.get('Localizacao', '')).strip()
             
             if not codigo or codigo == 'nan' or not nome or nome == 'nan':
                 continue
                 
+            localizacao = None
+            if codigo_loc and codigo_loc != 'nan':
+                localizacao = Localizacao.query.filter_by(codigo=codigo_loc).first()
+
             equipamento = Equipamento.query.filter_by(codigo=codigo).first()
             if not equipamento:
                 equipamento = Equipamento(codigo=codigo, nome=nome)
+                if localizacao:
+                    equipamento.localizacao_id = localizacao.id
                 db.session.add(equipamento)
                 counts['equipamentos'] += 1
             else:
                 equipamento.nome = nome
+                if localizacao:
+                    equipamento.localizacao_id = localizacao.id
 
         db.session.commit()
         flash(f'Importação concluída: {counts["equipamentos"]} equipamentos e {counts["localizacoes"]} localizações adicionados/atualizados.', 'success')
@@ -1147,9 +1246,16 @@ def baixar_template_importacao():
     try:
         output = BytesIO()
         
-        # Dados de exemplo
-        data_eq = {'Codigo': ['EQP001', 'EQP002'], 'Nome': ['Equipamento Exemplo 1', 'Equipamento Exemplo 2']}
-        data_loc = {'Codigo': ['LOC001', 'LOC002'], 'Nome': ['Localização Exemplo 1', 'Localização Exemplo 2']}
+        # Dados de exemplo atualizados com a coluna Localizacao
+        data_eq = {
+            'Codigo': ['EQP001', 'EQP002'], 
+            'Nome': ['Equipamento Exemplo 1', 'Equipamento Exemplo 2'],
+            'Localizacao': ['LOC001', 'LOC001'] # Exemplo de vínculo
+        }
+        data_loc = {
+            'Codigo': ['LOC001', 'LOC002'], 
+            'Nome': ['Localização Exemplo 1', 'Localização Exemplo 2']
+        }
         
         df_eq = pd.DataFrame(data_eq)
         df_loc = pd.DataFrame(data_loc)
@@ -1175,7 +1281,7 @@ def noc_monitor():
     """Painel de Monitoramento (NOC) para visualização em telas grandes"""
     # Buscar OS abertas e em andamento
     ordens_ativas = OrdemServico.query.filter(
-        OrdemServico.status.in_(['Aberta', 'Em Andamento'])
+        OrdemServico.status.in_(['Aberta', 'Em andamento'])
     ).order_by(OrdemServico.data_inicio.asc()).all()
     
     # Calcular quanto tempo cada uma está aberta e formatar
@@ -1189,3 +1295,78 @@ def noc_monitor():
         os.horas_total = hours # Para manter a lógica de alerta no template se necessário
         
     return render_template('noc_monitor.html', ordens=ordens_ativas)
+
+# ========================================
+# Gestão de Checklists
+# ========================================
+
+@main_bp.route('/config/checklists')
+@role_required('admin')
+def config_checklists():
+    templates = ChecklistTemplate.query.all()
+    equipamentos = Equipamento.query.all()
+    return render_template('checklists.html', templates=templates, equipamentos=equipamentos)
+
+@main_bp.route('/config/checklists/novo', methods=['POST'])
+@role_required('admin')
+def novo_checklist():
+    nome = request.form.get('nome')
+    descricao = request.form.get('descricao')
+    if nome:
+        template = ChecklistTemplate(nome=nome, descricao=descricao)
+        db.session.add(template)
+        db.session.commit()
+        flash('Checklist criado com sucesso!', 'success')
+    return redirect(url_for('main.config_checklists'))
+
+@main_bp.route('/config/checklists/item/novo/<int:template_id>', methods=['POST'])
+@role_required('admin')
+def novo_item_checklist(template_id):
+    pergunta = request.form.get('pergunta')
+    if pergunta:
+        max_ordem = db.session.query(func.max(ChecklistItem.ordem)).filter_by(template_id=template_id).scalar() or 0
+        item = ChecklistItem(template_id=template_id, pergunta=pergunta, ordem=max_ordem + 1)
+        db.session.add(item)
+        db.session.commit()
+        flash('Item adicionado!', 'success')
+    return redirect(url_for('main.config_checklists'))
+
+@main_bp.route('/config/checklists/excluir/<int:id>', methods=['POST'])
+@role_required('admin')
+def excluir_checklist(id):
+    template = ChecklistTemplate.query.get_or_404(id)
+    db.session.delete(template)
+    db.session.commit()
+    flash('Checklist excluído!', 'success')
+    return redirect(url_for('main.config_checklists'))
+
+@main_bp.route('/config/checklists/item/excluir/<int:id>', methods=['POST'])
+@role_required('admin')
+def excluir_item_checklist(id):
+    item = ChecklistItem.query.get_or_404(id)
+    db.session.delete(item)
+    db.session.commit()
+    flash('Item excluído!', 'success')
+    return redirect(url_for('main.config_checklists'))
+
+@main_bp.route('/config/checklists/associar-equipamento', methods=['POST'])
+@role_required('admin')
+def associar_checklist_equipamento():
+    equipamento_id = request.form.get('equipamento_id')
+    template_id = request.form.get('template_id')
+    
+    if equipamento_id and template_id:
+        equipamento = Equipamento.query.get(equipamento_id)
+        if template_id == '0':
+            equipamento.checklist_template_id = None
+        else:
+            equipamento.checklist_template_id = template_id
+        db.session.commit()
+        flash('Associação atualizada com sucesso!', 'success')
+    return redirect(url_for('main.config_checklists'))
+
+@main_bp.route('/api/checklists/itens/<int:template_id>')
+@login_required
+def api_checklist_itens(template_id):
+    itens = ChecklistItem.query.filter_by(template_id=template_id).order_by(ChecklistItem.ordem).all()
+    return jsonify([{'id': i.id, 'pergunta': i.pergunta} for i in itens])

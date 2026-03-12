@@ -14,16 +14,16 @@ class FinalizarOSForm(FlaskForm):
     # Checklist atualizado para SIM/NÃO (usando RadioField ou StringField)
     graxa_oleo = RadioField('Há graxa/óleo escorrendo?', 
                            choices=[('sim', 'SIM'), ('nao', 'NÃO')], 
-                           validators=[DataRequired()])
+                           validators=[Optional()])
     limpeza = RadioField('Limpeza realizada?', 
                         choices=[('sim', 'SIM'), ('nao', 'NÃO')], 
-                        validators=[DataRequired()])
+                        validators=[Optional()])
     pecas_soltas = RadioField('Peças soltas?', 
                              choices=[('sim', 'SIM'), ('nao', 'NÃO')], 
-                             validators=[DataRequired()])
+                             validators=[Optional()])
     equipamento_liberado = RadioField('Equipamento liberado?', 
                                      choices=[('sim', 'SIM'), ('nao', 'NÃO')], 
-                                     validators=[DataRequired()])
+                                     validators=[Optional()])
     
     nome_mecanico = StringField('Nome do Mecânico', validators=[DataRequired()])
     nome_conferente = StringField('Nome do Conferente', validators=[DataRequired()])
@@ -97,7 +97,19 @@ class MecanicoForm(FlaskForm):
 class EquipamentoForm(FlaskForm):
     codigo = StringField('Código', validators=[DataRequired()])
     nome = StringField('Nome', validators=[DataRequired()])
+    localizacao_id = SelectField('Localização', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Salvar')
+
+    def __init__(self, *args, **kwargs):
+        super(EquipamentoForm, self).__init__(*args, **kwargs)
+        try:
+            self.localizacao_id.choices = [(0, 'Selecione uma localização')] + [
+                (loc.id, f"{loc.codigo} - {loc.nome}") 
+                for loc in Localizacao.query.order_by(Localizacao.codigo).all()
+            ]
+        except Exception as e:
+            print(f"Erro ao carregar localizações no EquipamentoForm: {e}")
+            self.localizacao_id.choices = [(0, 'Erro ao carregar')]
 
 
 class LocalizacaoForm(FlaskForm):

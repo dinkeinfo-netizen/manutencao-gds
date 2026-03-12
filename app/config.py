@@ -3,7 +3,7 @@ import os
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'chave-secreta-aleatoria-gds-2024'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'mysql+mysqlconnector://manutencao_user:manutencao_pass@db/manutencao_db'
+        'postgresql://manutencao_user:manutencao_pass@db:5432/manutencao_db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or 'app/static/uploads'
 

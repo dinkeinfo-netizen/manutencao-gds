@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Sidebar Navigation -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm sticky-top" style="top: 2rem;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Sumário</h5>
+                </div>
+                <div class="list-group list-group-flush" id="manual-nav">
+                    <a href="#intro" class="list-group-item list-group-item-action active">Introdução</a>
+                    <a href="#dashboard" class="list-group-item list-group-item-action">Dashboard e KPIs</a>
+                    <a href="#os-fluxo" class="list-group-item list-group-item-action">Fluxo de O.S.</a>
+                    <a href="#configuracoes" class="list-group-item list-group-item-action">Configurações</a>
+                    <a href="#checklists" class="list-group-item list-group-item-action">Gestão de Checklists</a>
+                    <a href="#usuarios" class="list-group-item list-group-item-action">Usuários e Permissões</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Content -->
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4 p-md-5">
+                    
+                    <!-- Introdução -->
+                    <section id="intro" class="mb-5">
+                        <h2 class="display-5 fw-bold text-primary mb-3">Manual do Sistema GDS</h2>
+                        <p class="lead">Bem-vindo ao sistema de Manutenção GDS (RQ MAN - 073 01). Este sistema foi projetado para otimizar o fluxo de manutenção industrial, fornecendo controle total sobre ordens de serviço, indicadores de performance e conformidade técnica.</p>
+                        <div class="alert alert-info border-0 shadow-sm">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <strong>Objetivo:</strong> Garantir a máxima disponibilidade dos ativos através de uma gestão baseada em dados e processos padronizados.
+                        </div>
+                    </section>
+
+                    <hr class="my-5">
+
+                    <!-- Dashboard -->
+                    <section id="dashboard" class="mb-5">
+                        <h3 class="fw-bold mb-4"><i class="bi bi-speedometer2 me-2 text-primary"></i>1. Dashboard e KPIs</h3>
+                        <p>O Dashboard é o coração estratégico do sistema. Ele fornece uma visão em tempo real da saúde da manutenção.</p>
+                        
+                        <div class="row g-4 mt-2">
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <h6 class="fw-bold text-primary">MTTR (Mean Time To Repair)</h6>
+                                    <p class="small mb-0">Tempo médio que a equipe leva para realizar um reparo. Quanto menor, mais eficiente é a execução.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <h6 class="fw-bold text-primary">MTBF (Mean Time Between Failures)</h6>
+                                    <p class="small mb-0">Tempo médio entre falhas consecutivas. Quanto maior, mais confiável é o equipamento.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <h6 class="fw-bold text-primary">Disponibilidade (%)</h6>
+                                    <p class="small mb-0">Porcentagem de tempo em que a máquina esteve apta para produzir, descontando as paradas por manutenção.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <h6 class="fw-bold text-primary">Análise de Pareto</h6>
+                                    <p class="small mb-0">Identifica os "Top 5" equipamentos que geram mais corretivas, permitindo foco no que realmente impacta a fábrica.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Fluxo de O.S. -->
+                    <section id="os-fluxo" class="mb-5">
+                        <h3 class="fw-bold mb-4"><i class="bi bi-arrow-repeat me-2 text-primary"></i>2. Fluxo de Ordens de Serviço (O.S.)</h3>
+                        
+                        <div class="workflow-steps">
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-primary rounded-circle p-2" style="width: 35px; height: 35px;">1</span>
+                                </div>
+                                <div class="ms-3">
+                                    <h6 class="fw-bold">Lançar O.S.</h6>
+                                    <p class="text-muted">Qualquer usuário pode registrar uma quebra. Informe o solicitante, local, equipamento e o motivo da parada.</p>
+                                </div>
+                            </div>
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-primary rounded-circle p-2" style="width: 35px; height: 35px;">2</span>
+                                </div>
+                                <div class="ms-3">
+                                    <h6 class="fw-bold">Iniciar Atendimento</h6>
+                                    <p class="text-muted">Em "Manutenções em Andamento", o mecânico clica em "Iniciar". Isso marca o tempo de início para o cálculo do MTTR.</p>
+                                </div>
+                            </div>
+                            <div class="d-flex mb-4">
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-primary rounded-circle p-2" style="width: 35px; height: 35px;">3</span>
+                                </div>
+                                <div class="ms-3">
+                                    <h6 class="fw-bold">Finalizar O.S.</h6>
+                                    <p class="text-muted">O mecânico descreve o serviço, registra materiais, tira fotos e **responde ao Checklist**. Assinaturas digitais são coletadas no final.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Configurações -->
+                    <section id="configuracoes" class="mb-5">
+                        <h3 class="fw-bold mb-4"><i class="bi bi-gear me-2 text-primary"></i>3. Configurações e Ativos</h3>
+                        <p>O administrador deve manter o cadastro básico sempre atualizado para garantir a precisão dos dados.</p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item border-0 ps-0"><i class="bi bi-check2-circle text-success me-2"></i><strong>Mecânicos:</strong> Cadastro da equipe técnica.</li>
+                            <li class="list-group-item border-0 ps-0"><i class="bi bi-check2-circle text-success me-2"></i><strong>Equipamentos:</strong> Cadastro de máquinas com QR Code gerado automaticamente.</li>
+                            <li class="list-group-item border-0 ps-0"><i class="bi bi-check2-circle text-success me-2"></i><strong>Localizações:</strong> Mapeamento das áreas da fábrica.</li>
+                        </ul>
+                    </section>
+
+                    <!-- Gestão de Checklists -->
+                    <section id="checklists" class="mb-5">
+                        <h3 class="fw-bold mb-4"><i class="bi bi-card-checklist me-2 text-primary"></i>4. Gestão de Checklists Dinâmicos</h3>
+                        <p>Esta funcionalidade permite criar formulários de inspeção específicos para cada tipo de equipamento.</p>
+                        <div class="bg-light p-4 rounded-3 border-start border-primary border-4">
+                            <h6 class="fw-bold">Como Configurar:</h6>
+                            <ol class="small">
+                                <li>Crie um **Template** (ex: Checklist de Injetora).</li>
+                                <li>Adicione as verificações necessárias (itens).</li>
+                                <li>Associe esse template aos equipamentos correspondentes.</li>
+                            </ol>
+                            <p class="small text-muted mb-0">Isso garante que o mecânico não esqueça de nenhuma verificação crítica antes de liberar a máquina.</p>
+                        </div>
+                    </section>
+
+                    <!-- Usuários -->
+                    <section id="usuarios" class="mb-5">
+                        <h3 class="fw-bold mb-4"><i class="bi bi-people me-2 text-primary"></i>5. Usuários e Permissões</h3>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Perfil</th>
+                                        <th>O que pode fazer?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge bg-danger">Admin</span></td>
+                                        <td>Acesso total, configurações, exclusões e gestão de usuários.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-warning text-dark">Mecânico</span></td>
+                                        <td>Acesso ao dashboard, lançar OS, e finalizar atendimentos.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-primary">Usuário</span></td>
+                                        <td>Apenas visualizar dashboard e lançar novas ordens de serviço.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+            
+            <footer class="mt-5 text-center text-muted small">
+                <p>&copy; 2026 Sistema GDS - Todos os direitos reservados.</p>
+            </footer>
+        </div>
+    </div>
+</div>
+
+<style>
+    body { background-color: #f8f9fa; }
+    #manual-nav .list-group-item { border: none; padding: 0.8rem 1.25rem; font-weight: 500; }
+    #manual-nav .list-group-item.active { background-color: #0d6efd; }
+    section h3 { padding-top: 1rem; }
+    .scroll-spy-active { background-color: #e9ecef !important; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const links = document.querySelectorAll('#manual-nav a');
+        const sections = document.querySelectorAll('section');
+
+        window.addEventListener('scroll', function() {
+            let current = "";
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            links.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -10,7 +10,7 @@ def create_app():
     # Configurações
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chave-secreta-aleatoria-aqui')
     csrf = CSRFProtect(app) 
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://manutencao_user:manutencao_pass@db/manutencao_db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'postgresql://manutencao_user:manutencao_pass@db:5432/manutencao_db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Inicialização de extensões

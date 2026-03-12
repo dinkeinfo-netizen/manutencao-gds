@@ -32,7 +32,7 @@
         </span>
         {% else %}
         <span class="badge bg-warning fs-6 me-2">
-            <i class="bi bi-clock me-1"></i>Em Andamento
+            <i class="bi bi-clock me-1"></i>Em andamento
         </span>
         {% endif %}
 
@@ -200,106 +200,136 @@
     {% endif %}
 
     <!-- Check List de Verificação (apenas se tiver dados) -->
-    {% if os.graxa_oleo or os.limpeza or os.pecas_soltas or os.equipamento_liberado %}
+    {% if os.checklist_respostas or os.graxa_oleo or os.limpeza or os.pecas_soltas or os.equipamento_liberado %}
     <div class="card mb-4">
         <div class="card-header bg-warning text-dark">
             <h5 class="mb-0">
-                <i class="bi bi-clipboard-check me-2"></i>Check List de Verificação Pós Manutenção – RQ MAN – 066/01
+                <i class="bi bi-clipboard-check me-2"></i>
+                {% if os.checklist_respostas %}
+                    Checklist: {{ os.checklist_respostas[0].item.template.nome if os.checklist_respostas[0].item else 'Dinâmico' }}
+                {% else %}
+                    Check List de Verificação Pós Manutenção – RQ MAN – 066/01
+                {% endif %}
             </h5>
         </div>
         <div class="card-body">
             <div class="row">
-                <!-- Há graxa/óleo escorrendo? -->
-                <div class="col-lg-6 mb-4">
-                    <div class="checklist-item">
-                        <div class="checklist-question">
-                            <i class="bi bi-droplet me-2 text-primary"></i>
-                            Há graxa/óleo escorrendo?
-                        </div>
-                        <div class="checklist-answer">
-                            {% if os.graxa_oleo == 'sim' or os.graxa_oleo == True %}
-                            <span class="badge bg-danger fs-6">
-                                <i class="bi bi-x-circle me-1"></i>SIM
-                            </span>
-                            {% elif os.graxa_oleo == 'nao' or os.graxa_oleo == False %}
-                            <span class="badge bg-success fs-6">
-                                <i class="bi bi-check-circle me-1"></i>NÃO
-                            </span>
-                            {% else %}
-                            <span class="badge bg-secondary fs-6">Não verificado</span>
-                            {% endif %}
+                {% if os.checklist_respostas %}
+                    {% for resposta in os.checklist_respostas %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="checklist-item">
+                            <div class="checklist-question">
+                                <i class="bi bi-patch-check me-2 text-primary"></i>
+                                {{ resposta.item.pergunta }}
+                            </div>
+                            <div class="checklist-answer">
+                                {% if resposta.valor %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>SIM (OK)
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>NÃO
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Bloco legado -->
+                    <!-- Há graxa/óleo escorrendo? -->
+                    {% if os.graxa_oleo is not none %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="checklist-item">
+                            <div class="checklist-question">
+                                <i class="bi bi-droplet me-2 text-primary"></i>
+                                Há graxa/óleo escorrendo?
+                            </div>
+                            <div class="checklist-answer">
+                                {% if os.graxa_oleo == 'sim' or os.graxa_oleo == True %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>SIM
+                                </span>
+                                {% elif os.graxa_oleo == 'nao' or os.graxa_oleo == False %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>NÃO
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
 
-                <!-- Limpeza realizada? -->
-                <div class="col-lg-6 mb-4">
-                    <div class="checklist-item">
-                        <div class="checklist-question">
-                            <i class="bi bi-brush me-2 text-primary"></i>
-                            Limpeza realizada?
-                        </div>
-                        <div class="checklist-answer">
-                            {% if os.limpeza == 'sim' or os.limpeza == True %}
-                            <span class="badge bg-success fs-6">
-                                <i class="bi bi-check-circle me-1"></i>SIM
-                            </span>
-                            {% elif os.limpeza == 'nao' or os.limpeza == False %}
-                            <span class="badge bg-danger fs-6">
-                                <i class="bi bi-x-circle me-1"></i>NÃO
-                            </span>
-                            {% else %}
-                            <span class="badge bg-secondary fs-6">Não verificado</span>
-                            {% endif %}
+                    <!-- Limpeza realizada? -->
+                    {% if os.limpeza is not none %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="checklist-item">
+                            <div class="checklist-question">
+                                <i class="bi bi-brush me-2 text-primary"></i>
+                                Limpeza realizada?
+                            </div>
+                            <div class="checklist-answer">
+                                {% if os.limpeza == 'sim' or os.limpeza == True %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>SIM
+                                </span>
+                                {% elif os.limpeza == 'nao' or os.limpeza == False %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>NÃO
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {% endif %}
 
-                <!-- Peças soltas? -->
-                <div class="col-lg-6 mb-4">
-                    <div class="checklist-item">
-                        <div class="checklist-question">
-                            <i class="bi bi-nut me-2 text-primary"></i>
-                            Peças soltas?
-                        </div>
-                        <div class="checklist-answer">
-                            {% if os.pecas_soltas == 'sim' or os.pecas_soltas == True %}
-                            <span class="badge bg-danger fs-6">
-                                <i class="bi bi-x-circle me-1"></i>SIM
-                            </span>
-                            {% elif os.pecas_soltas == 'nao' or os.pecas_soltas == False %}
-                            <span class="badge bg-success fs-6">
-                                <i class="bi bi-check-circle me-1"></i>NÃO
-                            </span>
-                            {% else %}
-                            <span class="badge bg-secondary fs-6">Não verificado</span>
-                            {% endif %}
+                    <!-- Peças soltas? -->
+                    {% if os.pecas_soltas is not none %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="checklist-item">
+                            <div class="checklist-question">
+                                <i class="bi bi-nut me-2 text-primary"></i>
+                                Peças soltas?
+                            </div>
+                            <div class="checklist-answer">
+                                {% if os.pecas_soltas == 'sim' or os.pecas_soltas == True %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>SIM
+                                </span>
+                                {% elif os.pecas_soltas == 'nao' or os.pecas_soltas == False %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>NÃO
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {% endif %}
 
-                <!-- Equipamento liberado? -->
-                <div class="col-lg-6 mb-4">
-                    <div class="checklist-item">
-                        <div class="checklist-question">
-                            <i class="bi bi-unlock me-2 text-primary"></i>
-                            Equipamento liberado para operação?
-                        </div>
-                        <div class="checklist-answer">
-                            {% if os.equipamento_liberado == 'sim' or os.equipamento_liberado == True %}
-                            <span class="badge bg-success fs-6">
-                                <i class="bi bi-check-circle me-1"></i>SIM
-                            </span>
-                            {% elif os.equipamento_liberado == 'nao' or os.equipamento_liberado == False %}
-                            <span class="badge bg-danger fs-6">
-                                <i class="bi bi-x-circle me-1"></i>NÃO
-                            </span>
-                            {% else %}
-                            <span class="badge bg-secondary fs-6">Não verificado</span>
-                            {% endif %}
+                    <!-- Equipamento liberado? -->
+                    {% if os.equipamento_liberado is not none %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="checklist-item">
+                            <div class="checklist-question">
+                                <i class="bi bi-unlock me-2 text-primary"></i>
+                                Equipamento liberado para operação?
+                            </div>
+                            <div class="checklist-answer">
+                                {% if os.equipamento_liberado == 'sim' or os.equipamento_liberado == True %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>SIM
+                                </span>
+                                {% elif os.equipamento_liberado == 'nao' or os.equipamento_liberado == False %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="bi bi-x-circle me-1"></i>NÃO
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -413,6 +443,10 @@
     </div>
 </div>
 
+
+{% endblock %}
+
+{% block extra_body %}
 <!-- Modal para Visualizar Imagens -->
 <div class="modal fade" id="imageModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -450,6 +484,9 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block css %}
 <style>
     /* Layout geral */
     .card {
@@ -779,19 +816,25 @@
         animation: fadeIn 0.5s ease-out;
     }
 </style>
+{% endblock %}
 
+{% block js %}
 <script>
     // Funções para modais
     function openImageModal(imageSrc, title) {
         document.getElementById('modalImage').src = imageSrc;
         document.getElementById('imageModalTitle').textContent = title || 'Visualizar Imagem';
-        new bootstrap.Modal(document.getElementById('imageModal')).show();
+        const modalEl = document.getElementById('imageModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
     }
 
     function openSignatureModal(signatureSrc, title) {
         document.getElementById('modalSignature').src = signatureSrc;
         document.getElementById('signatureModalTitle').textContent = title || 'Visualizar Assinatura';
-        new bootstrap.Modal(document.getElementById('signatureModal')).show();
+        const modalEl = document.getElementById('signatureModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
     }
 
     // Adicionar data atual
