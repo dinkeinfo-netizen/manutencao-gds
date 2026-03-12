@@ -18,6 +18,9 @@
             </div>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ url_for('main.detalhes_os_pdf', os_id=os.id) }}" class="btn btn-outline-danger">
+                <i class="bi bi-file-pdf"></i> Gerar PDF
+            </a>
             <button class="btn btn-outline-info" onclick="window.print()">
                 <i class="bi bi-printer"></i> Imprimir
             </button>
@@ -52,15 +55,19 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-lg-6">
-                    <div class="info-item mb-3">
+                <!-- 1. Solicitante -->
+                <div class="col-md-6 mb-3">
+                    <div class="info-item h-100">
                         <div class="info-label">
                             <i class="bi bi-person me-2 text-primary"></i>Solicitante
                         </div>
                         <div class="info-value">{{ os.solicitante }}</div>
                     </div>
+                </div>
 
-                    <div class="info-item mb-3">
+                <!-- 2. Localização -->
+                <div class="col-md-6 mb-3">
+                    <div class="info-item h-100">
                         <div class="info-label">
                             <i class="bi bi-geo-alt me-2 text-success"></i>Localização/Área
                         </div>
@@ -69,8 +76,11 @@
                             os.localizacao else 'N/A' }}
                         </div>
                     </div>
+                </div>
 
-                    <div class="info-item mb-3">
+                <!-- 3. Equipamento -->
+                <div class="col-md-6 mb-3">
+                    <div class="info-item h-100">
                         <div class="info-label">
                             <i class="bi bi-tools me-2 text-info"></i>Equipamento
                         </div>
@@ -81,22 +91,29 @@
                     </div>
                 </div>
 
-                <div class="col-lg-6">
-                    <div class="info-item mb-3">
+                <!-- 4. Tipo de Manutenção -->
+                <div class="col-md-6 mb-3">
+                    <div class="info-item h-100">
                         <div class="info-label">
                             <i class="bi bi-wrench me-2 text-warning"></i>Tipo de Manutenção
                         </div>
                         <div class="info-value">{{ os.tipo_manutencao|title }}</div>
                     </div>
+                </div>
 
-                    <div class="info-item mb-3">
+                <!-- 5. Tipo de Parada -->
+                <div class="col-md-6 mb-3">
+                    <div class="info-item h-100">
                         <div class="info-label">
                             <i class="bi bi-pause-circle me-2 text-secondary"></i>Tipo de Parada
                         </div>
                         <div class="info-value">{{ os.tipo_parada|title }}</div>
                     </div>
+                </div>
 
-                    <div class="info-item mb-3">
+                <!-- 6. Período da Manutenção -->
+                <div class="col-md-6 mb-3">
+                    <div class="info-item h-100">
                         <div class="info-label">
                             <i class="bi bi-calendar me-2 text-dark"></i>Período da Manutenção
                         </div>
@@ -108,9 +125,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="row mt-3">
+                <!-- 7. Motivo da Quebra -->
                 <div class="col-12">
                     <div class="info-item">
                         <div class="info-label">
@@ -206,129 +222,130 @@
             <h5 class="mb-0">
                 <i class="bi bi-clipboard-check me-2"></i>
                 {% if os.checklist_respostas %}
-                    Checklist: {{ os.checklist_respostas[0].item.template.nome if os.checklist_respostas[0].item else 'Dinâmico' }}
+                Checklist: {{ os.checklist_respostas[0].item.template.nome if os.checklist_respostas[0].item else
+                'Dinâmico' }}
                 {% else %}
-                    Check List de Verificação Pós Manutenção – RQ MAN – 066/01
+                Check List de Verificação Pós Manutenção – RQ MAN – 066/01
                 {% endif %}
             </h5>
         </div>
         <div class="card-body">
             <div class="row">
                 {% if os.checklist_respostas %}
-                    {% for resposta in os.checklist_respostas %}
-                    <div class="col-lg-6 mb-4">
-                        <div class="checklist-item">
-                            <div class="checklist-question">
-                                <i class="bi bi-patch-check me-2 text-primary"></i>
-                                {{ resposta.item.pergunta }}
-                            </div>
-                            <div class="checklist-answer">
-                                {% if resposta.valor %}
-                                <span class="badge bg-success fs-6">
-                                    <i class="bi bi-check-circle me-1"></i>SIM (OK)
-                                </span>
-                                {% else %}
-                                <span class="badge bg-danger fs-6">
-                                    <i class="bi bi-x-circle me-1"></i>NÃO
-                                </span>
-                                {% endif %}
-                            </div>
+                {% for resposta in os.checklist_respostas %}
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-patch-check me-2 text-primary"></i>
+                            {{ resposta.item.pergunta }}
+                        </div>
+                        <div class="checklist-answer">
+                            {% if resposta.valor %}
+                            <span class="badge bg-success fs-6">
+                                <i class="bi bi-check-circle me-1"></i>SIM (OK)
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger fs-6">
+                                <i class="bi bi-x-circle me-1"></i>NÃO
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endfor %}
+                </div>
+                {% endfor %}
                 {% else %}
-                    <!-- Bloco legado -->
-                    <!-- Há graxa/óleo escorrendo? -->
-                    {% if os.graxa_oleo is not none %}
-                    <div class="col-lg-6 mb-4">
-                        <div class="checklist-item">
-                            <div class="checklist-question">
-                                <i class="bi bi-droplet me-2 text-primary"></i>
-                                Há graxa/óleo escorrendo?
-                            </div>
-                            <div class="checklist-answer">
-                                {% if os.graxa_oleo == 'sim' or os.graxa_oleo == True %}
-                                <span class="badge bg-danger fs-6">
-                                    <i class="bi bi-x-circle me-1"></i>SIM
-                                </span>
-                                {% elif os.graxa_oleo == 'nao' or os.graxa_oleo == False %}
-                                <span class="badge bg-success fs-6">
-                                    <i class="bi bi-check-circle me-1"></i>NÃO
-                                </span>
-                                {% endif %}
-                            </div>
+                <!-- Bloco legado -->
+                <!-- Há graxa/óleo escorrendo? -->
+                {% if os.graxa_oleo is not none %}
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-droplet me-2 text-primary"></i>
+                            Há graxa/óleo escorrendo?
+                        </div>
+                        <div class="checklist-answer">
+                            {% if os.graxa_oleo == 'sim' or os.graxa_oleo == True %}
+                            <span class="badge bg-danger fs-6">
+                                <i class="bi bi-x-circle me-1"></i>SIM
+                            </span>
+                            {% elif os.graxa_oleo == 'nao' or os.graxa_oleo == False %}
+                            <span class="badge bg-success fs-6">
+                                <i class="bi bi-check-circle me-1"></i>NÃO
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
+                </div>
+                {% endif %}
 
-                    <!-- Limpeza realizada? -->
-                    {% if os.limpeza is not none %}
-                    <div class="col-lg-6 mb-4">
-                        <div class="checklist-item">
-                            <div class="checklist-question">
-                                <i class="bi bi-brush me-2 text-primary"></i>
-                                Limpeza realizada?
-                            </div>
-                            <div class="checklist-answer">
-                                {% if os.limpeza == 'sim' or os.limpeza == True %}
-                                <span class="badge bg-success fs-6">
-                                    <i class="bi bi-check-circle me-1"></i>SIM
-                                </span>
-                                {% elif os.limpeza == 'nao' or os.limpeza == False %}
-                                <span class="badge bg-danger fs-6">
-                                    <i class="bi bi-x-circle me-1"></i>NÃO
-                                </span>
-                                {% endif %}
-                            </div>
+                <!-- Limpeza realizada? -->
+                {% if os.limpeza is not none %}
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-brush me-2 text-primary"></i>
+                            Limpeza realizada?
+                        </div>
+                        <div class="checklist-answer">
+                            {% if os.limpeza == 'sim' or os.limpeza == True %}
+                            <span class="badge bg-success fs-6">
+                                <i class="bi bi-check-circle me-1"></i>SIM
+                            </span>
+                            {% elif os.limpeza == 'nao' or os.limpeza == False %}
+                            <span class="badge bg-danger fs-6">
+                                <i class="bi bi-x-circle me-1"></i>NÃO
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
+                </div>
+                {% endif %}
 
-                    <!-- Peças soltas? -->
-                    {% if os.pecas_soltas is not none %}
-                    <div class="col-lg-6 mb-4">
-                        <div class="checklist-item">
-                            <div class="checklist-question">
-                                <i class="bi bi-nut me-2 text-primary"></i>
-                                Peças soltas?
-                            </div>
-                            <div class="checklist-answer">
-                                {% if os.pecas_soltas == 'sim' or os.pecas_soltas == True %}
-                                <span class="badge bg-danger fs-6">
-                                    <i class="bi bi-x-circle me-1"></i>SIM
-                                </span>
-                                {% elif os.pecas_soltas == 'nao' or os.pecas_soltas == False %}
-                                <span class="badge bg-success fs-6">
-                                    <i class="bi bi-check-circle me-1"></i>NÃO
-                                </span>
-                                {% endif %}
-                            </div>
+                <!-- Peças soltas? -->
+                {% if os.pecas_soltas is not none %}
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-nut me-2 text-primary"></i>
+                            Peças soltas?
+                        </div>
+                        <div class="checklist-answer">
+                            {% if os.pecas_soltas == 'sim' or os.pecas_soltas == True %}
+                            <span class="badge bg-danger fs-6">
+                                <i class="bi bi-x-circle me-1"></i>SIM
+                            </span>
+                            {% elif os.pecas_soltas == 'nao' or os.pecas_soltas == False %}
+                            <span class="badge bg-success fs-6">
+                                <i class="bi bi-check-circle me-1"></i>NÃO
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
+                </div>
+                {% endif %}
 
-                    <!-- Equipamento liberado? -->
-                    {% if os.equipamento_liberado is not none %}
-                    <div class="col-lg-6 mb-4">
-                        <div class="checklist-item">
-                            <div class="checklist-question">
-                                <i class="bi bi-unlock me-2 text-primary"></i>
-                                Equipamento liberado para operação?
-                            </div>
-                            <div class="checklist-answer">
-                                {% if os.equipamento_liberado == 'sim' or os.equipamento_liberado == True %}
-                                <span class="badge bg-success fs-6">
-                                    <i class="bi bi-check-circle me-1"></i>SIM
-                                </span>
-                                {% elif os.equipamento_liberado == 'nao' or os.equipamento_liberado == False %}
-                                <span class="badge bg-danger fs-6">
-                                    <i class="bi bi-x-circle me-1"></i>NÃO
-                                </span>
-                                {% endif %}
-                            </div>
+                <!-- Equipamento liberado? -->
+                {% if os.equipamento_liberado is not none %}
+                <div class="col-lg-6 mb-4">
+                    <div class="checklist-item">
+                        <div class="checklist-question">
+                            <i class="bi bi-unlock me-2 text-primary"></i>
+                            Equipamento liberado para operação?
+                        </div>
+                        <div class="checklist-answer">
+                            {% if os.equipamento_liberado == 'sim' or os.equipamento_liberado == True %}
+                            <span class="badge bg-success fs-6">
+                                <i class="bi bi-check-circle me-1"></i>SIM
+                            </span>
+                            {% elif os.equipamento_liberado == 'nao' or os.equipamento_liberado == False %}
+                            <span class="badge bg-danger fs-6">
+                                <i class="bi bi-x-circle me-1"></i>NÃO
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
+                </div>
+                {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -777,6 +794,17 @@
             margin-bottom: 5pt !important;
             font-size: 8.5pt !important;
             -webkit-print-color-adjust: exact;
+        }
+
+        /* Garantir sequência de campos na impressão */
+        .card-body .row .col-md-6 {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+            margin-bottom: 5pt !important;
+        }
+
+        .info-item {
+            page-break-inside: avoid;
         }
     }
 

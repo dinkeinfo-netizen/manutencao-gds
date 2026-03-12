@@ -17,9 +17,18 @@
                     <a class="nav-link" href="{{ url_for('main.manutencoes_andamento') }}">Manutenções</a>
                 </li>
                 {% endif %}
+                {% if current_user.is_authenticated and current_user.role in ['admin', 'mecanico'] %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
                 </li>
+                {% endif %}
+                {% if current_user.role == 'usuario' %}
+                <li class="nav-item">
+                    <a class="nav-link text-warning fw-bold" href="{{ url_for('main.noc_monitor') }}">
+                        <i class="fas fa-desktop me-1"></i> Monitor NOC
+                    </a>
+                </li>
+                {% endif %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('main.manual') }}">
                         <i class="bi bi-question-circle"></i> Ajuda
@@ -56,6 +65,14 @@
                         </li>
                         <li><a class="dropdown-item" href="{{ url_for('main.config_localizacoes') }}">Localizações</a>
                         </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.config_calendario') }}">Calendário
+                                Operacional</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.config_parametros_maquina') }}">Parâmetros
+                                de Máquina</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.config_checklists') }}">Checklists</a></li>
                         {% endif %}
                         {% if current_user.role == 'mecanico' %}
                         <!-- Mecânico pode ter opções específicas aqui, se desejar -->

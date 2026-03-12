@@ -45,7 +45,7 @@
             Ações Principais
         </h3>
     </div>
-    
+
     <!-- Nova OS Card -->
     <div class="col-lg-6 col-md-6 mb-4">
         <div class="action-card bg-gradient-primary">
@@ -84,8 +84,9 @@
         </div>
     </div>
 
-    <!-- Dashboard Card -->
+    <!-- Dashboard / Monitor NOC Card -->
     <div class="col-lg-6 col-md-6 mb-4">
+        {% if current_user.role in ['admin', 'mecanico'] %}
         <div class="action-card bg-gradient-info">
             <div class="card-body text-white p-4">
                 <div class="d-flex align-items-center justify-content-between">
@@ -120,6 +121,42 @@
                 </small>
             </div>
         </div>
+        {% else %}
+        <div class="action-card bg-gradient-warning">
+            <div class="card-body text-white p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h4 class="card-title mb-2">
+                            <i class="fas fa-desktop me-2"></i>
+                            Monitor NOC
+                        </h4>
+                        <p class="card-text mb-3 opacity-75">
+                            Acompanhe o status das máquinas em tempo real na fábrica
+                        </p>
+                        <a href="{{ url_for('main.noc_monitor') }}" class="btn btn-light btn-lg">
+                            <i class="fas fa-tv me-2"></i>
+                            Abrir Monitor
+                        </a>
+                        <div class="mt-2">
+                            <small class="opacity-75">
+                                <i class="fas fa-keyboard me-1"></i>
+                                Visualização simplificada
+                            </small>
+                        </div>
+                    </div>
+                    <div class="action-icon">
+                        <i class="fas fa-broadcast-tower opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-white-50">
+                <small>
+                    <i class="fas fa-check-circle me-1"></i>
+                    Modo Escuro / Alta Visibilidade
+                </small>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -131,7 +168,7 @@
             Gestão de Manutenções
         </h3>
     </div>
-    
+
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="management-card">
             <div class="card-body text-center p-4">
@@ -155,7 +192,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="management-card">
             <div class="card-body text-center p-4">
@@ -179,7 +216,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-4 col-md-12 mb-4">
         <div class="management-card">
             <div class="card-body text-center p-4">
@@ -197,8 +234,18 @@
                     <a href="{{ url_for('main.config_equipamentos') }}" class="btn btn-outline-secondary btn-sm mb-1">
                         <i class="fas fa-tools me-1"></i>Equipamentos
                     </a>
-                    <a href="{{ url_for('main.config_localizacoes') }}" class="btn btn-outline-secondary btn-sm">
+                    <a href="{{ url_for('main.config_localizacoes') }}" class="btn btn-outline-secondary btn-sm mb-1">
                         <i class="fas fa-map-marker-alt me-1"></i>Localizações
+                    </a>
+                    <a href="{{ url_for('main.config_calendario') }}" class="btn btn-outline-secondary btn-sm mb-1">
+                        <i class="fas fa-calendar-alt me-1"></i>Calendário
+                    </a>
+                    <a href="{{ url_for('main.config_parametros_maquina') }}"
+                        class="btn btn-outline-secondary btn-sm mb-1">
+                        <i class="fas fa-cog me-1"></i>Parâmetros Máquina
+                    </a>
+                    <a href="{{ url_for('main.config_checklists') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list-check me-1"></i>Checklists
                     </a>
                 </div>
             </div>
@@ -306,7 +353,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-4 mb-4">
         <div class="card bg-success text-white">
             <div class="card-body text-center">
@@ -362,377 +409,381 @@
 </div>
 
 <style>
-/* Hero Section Styles */
-.hero-section {
-    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
-    border-radius: 1.5rem;
-    margin-bottom: 2rem;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.3);
-    backdrop-filter: blur(10px);
-}
-
-.hero-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
-}
-
-.hero-stats {
-    margin-top: 2rem;
-}
-
-.stat-item {
-    text-align: center;
-    padding: 1.5rem;
-    background: rgba(255,255,255,0.6);
-    border-radius: 1rem;
-    margin: 0.5rem;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255,255,255,0.4);
-    backdrop-filter: blur(5px);
-}
-
-.stat-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    background: rgba(255,255,255,0.8);
-}
-
-/* Action Cards */
-.action-card {
-    border: none;
-    border-radius: 1.5rem;
-    transition: all 0.3s ease;
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-}
-
-.action-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.2);
-}
-
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.bg-gradient-info {
-    background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
-}
-
-.action-icon i {
-    font-size: 6rem;
-    position: absolute;
-    right: 1.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-/* Management Cards */
-.management-card {
-    background: rgba(255,255,255,0.95);
-    border: none;
-    border-radius: 1.5rem;
-    transition: all 0.3s ease;
-    height: 100%;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-.management-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
-    background: rgba(255,255,255,1);
-}
-
-.icon-wrapper {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    background: rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-}
-
-.management-card:hover .icon-wrapper {
-    transform: scale(1.1);
-    background: rgba(0,0,0,0.08);
-}
-
-.icon-wrapper i {
-    font-size: 2rem;
-}
-
-/* Quick Stats */
-.quick-stat {
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-    border-radius: 1rem;
-}
-
-.quick-stat:hover {
-    transform: scale(1.05);
-    background: rgba(255,255,255,0.8);
-}
-
-.quick-stat i {
-    font-size: 2.5rem;
-    display: block;
-}
-
-/* Button Enhancements */
-.btn-group-vertical .btn {
-    border-radius: 0.5rem !important;
-    margin-bottom: 0.5rem;
-    transition: all 0.3s ease;
-}
-
-.btn-group-vertical .btn:hover {
-    transform: translateX(5px);
-}
-
-/* Animations */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
+    /* Hero Section Styles */
+    .hero-section {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+        border-radius: 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
     }
-    50% {
-        transform: scale(1.05);
-    }
-}
 
-.fade-in-up {
-    animation: fadeInUp 0.6s ease-out;
-}
-
-.pulse-on-load {
-    animation: pulse 2s ease-in-out infinite;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .action-icon {
-        display: none;
-    }
-    
     .hero-stats {
-        flex-direction: column;
-        align-items: center;
+        margin-top: 2rem;
     }
-    
+
     .stat-item {
-        width: 100%;
-        max-width: 280px;
-        margin: 0.5rem 0;
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 1rem;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(5px);
     }
-    
-    .display-4 {
+
+    .stat-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Action Cards */
+    .action-card {
+        border: none;
+        border-radius: 1.5rem;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+    }
+
+    .action-icon i {
+        font-size: 6rem;
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* Management Cards */
+    .management-card {
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        border-radius: 1.5rem;
+        transition: all 0.3s ease;
+        height: 100%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .management-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        background: rgba(255, 255, 255, 1);
+    }
+
+    .icon-wrapper {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        background: rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .management-card:hover .icon-wrapper {
+        transform: scale(1.1);
+        background: rgba(0, 0, 0, 0.08);
+    }
+
+    .icon-wrapper i {
+        font-size: 2rem;
+    }
+
+    /* Quick Stats */
+    .quick-stat {
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        border-radius: 1rem;
+    }
+
+    .quick-stat:hover {
+        transform: scale(1.05);
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .quick-stat i {
         font-size: 2.5rem;
+        display: block;
     }
-    
-    .action-card .card-body {
-        padding: 2rem !important;
+
+    /* Button Enhancements */
+    .btn-group-vertical .btn {
+        border-radius: 0.5rem !important;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
     }
-}
 
-/* Loading states */
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+    .btn-group-vertical .btn:hover {
+        transform: translateX(5px);
+    }
 
-.btn.loading {
-    position: relative;
-    color: transparent;
-}
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
 
-.btn.loading::after {
-    content: '';
-    position: absolute;
-    width: 1rem;
-    height: 1rem;
-    top: 50%;
-    left: 50%;
-    margin-left: -0.5rem;
-    margin-top: -0.5rem;
-    border: 2px solid #ffffff;
-    border-radius: 50%;
-    border-top-color: transparent;
-    animation: spin 1s ease-in-out infinite;
-}
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 
-/* Keyboard shortcuts */
-kbd {
-    background-color: #212529;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-family: monospace;
-}
+    @keyframes pulse {
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-}
+        0%,
+        100% {
+            transform: scale(1);
+        }
 
-::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.1);
-    border-radius: 4px;
-}
+        50% {
+            transform: scale(1.05);
+        }
+    }
 
-::-webkit-scrollbar-thumb {
-    background: rgba(0,0,0,0.3);
-    border-radius: 4px;
-}
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+    }
 
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(0,0,0,0.5);
-}
+    .pulse-on-load {
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .action-icon {
+            display: none;
+        }
+
+        .hero-stats {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-item {
+            width: 100%;
+            max-width: 280px;
+            margin: 0.5rem 0;
+        }
+
+        .display-4 {
+            font-size: 2.5rem;
+        }
+
+        .action-card .card-body {
+            padding: 2rem !important;
+        }
+    }
+
+    /* Loading states */
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn.loading {
+        position: relative;
+        color: transparent;
+    }
+
+    .btn.loading::after {
+        content: '';
+        position: absolute;
+        width: 1rem;
+        height: 1rem;
+        top: 50%;
+        left: 50%;
+        margin-left: -0.5rem;
+        margin-top: -0.5rem;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    /* Keyboard shortcuts */
+    kbd {
+        background-color: #212529;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-family: monospace;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.5);
+    }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add fade-in animation to cards
-    const cards = document.querySelectorAll('.action-card, .management-card, .quick-stat');
-    cards.forEach((card, index) => {
-        card.style.animationDelay = `${index * 0.1}s`;
-        card.classList.add('fade-in-up');
-    });
-    
-    // Add click tracking and loading states
-    const actionButtons = document.querySelectorAll('.action-card .btn, .management-card .btn');
-    actionButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            // Add loading state
-            const originalText = this.innerHTML;
-            this.disabled = true;
-            this.classList.add('loading');
-            
-            // Re-enable after navigation (fallback)
-            setTimeout(() => {
-                this.disabled = false;
-                this.classList.remove('loading');
-                this.innerHTML = originalText;
-            }, 3000);
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add fade-in animation to cards
+        const cards = document.querySelectorAll('.action-card, .management-card, .quick-stat');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('fade-in-up');
         });
-    });
-    
-    // Dynamic greeting based on time
-    const hour = new Date().getHours();
-    let greeting = 'Boa tarde';
-    if (hour < 12) greeting = 'Bom dia';
-    else if (hour < 18) greeting = 'Boa tarde';
-    else greeting = 'Boa noite';
-    
-    // Add greeting to hero section
-    const heroTitle = document.querySelector('.hero-section h1');
-    if (heroTitle) {
-        const greetingElement = document.createElement('p');
-        greetingElement.className = 'lead text-primary mb-2';
-        greetingElement.innerHTML = `<i class="fas fa-sun me-2"></i>${greeting}! Bem-vindo ao`;
-        heroTitle.parentNode.insertBefore(greetingElement, heroTitle);
-    }
-    
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        if (e.altKey) {
-            switch(e.key.toLowerCase()) {
-                case 'n':
-                    e.preventDefault();
-                    window.location.href = "{{ url_for('main.lancar_os') }}";
-                    break;
-                case 'd':
-                    e.preventDefault();
-                    window.location.href = "{{ url_for('main.dashboard') }}";
-                    break;
-                case 'm':
-                    e.preventDefault();
-                    window.location.href = "{{ url_for('main.manutencoes_andamento') }}";
-                    break;
-                case 'c':
-                    e.preventDefault();
-                    window.location.href = "{{ url_for('main.manutencoes_concluidas') }}";
-                    break;
-            }
-        }
-        
-        // Show shortcuts modal with '?' key
-        if (e.key === '?' && !e.shiftKey) {
-            e.preventDefault();
-            showShortcutsModal();
-        }
-        
-        // Close modal with Escape
-        if (e.key === 'Escape') {
-            const modals = document.querySelectorAll('.modal.show');
-            modals.forEach(modal => {
-                bootstrap.Modal.getInstance(modal)?.hide();
+
+        // Add click tracking and loading states
+        const actionButtons = document.querySelectorAll('.action-card .btn, .management-card .btn');
+        actionButtons.forEach(button => {
+            button.addEventListener('click', function (e) {
+                // Add loading state
+                const originalText = this.innerHTML;
+                this.disabled = true;
+                this.classList.add('loading');
+
+                // Re-enable after navigation (fallback)
+                setTimeout(() => {
+                    this.disabled = false;
+                    this.classList.remove('loading');
+                    this.innerHTML = originalText;
+                }, 3000);
             });
-        }
-    });
-    
-    // Add pulse animation to main action cards
-    setTimeout(() => {
-        document.querySelectorAll('.action-card').forEach(card => {
-            card.classList.add('pulse-on-load');
-            setTimeout(() => {
-                card.classList.remove('pulse-on-load');
-            }, 4000);
         });
-    }, 1000);
-    
-    // Add tooltip to show shortcuts
-    const actionCards = document.querySelectorAll('.action-card');
-    actionCards.forEach(card => {
-        const shortcut = card.querySelector('small');
-        if (shortcut) {
-            card.setAttribute('data-bs-toggle', 'tooltip');
-            card.setAttribute('title', 'Clique ou use o atalho do teclado');
+
+        // Dynamic greeting based on time
+        const hour = new Date().getHours();
+        let greeting = 'Boa tarde';
+        if (hour < 12) greeting = 'Bom dia';
+        else if (hour < 18) greeting = 'Boa tarde';
+        else greeting = 'Boa noite';
+
+        // Add greeting to hero section
+        const heroTitle = document.querySelector('.hero-section h1');
+        if (heroTitle) {
+            const greetingElement = document.createElement('p');
+            greetingElement.className = 'lead text-primary mb-2';
+            greetingElement.innerHTML = `<i class="fas fa-sun me-2"></i>${greeting}! Bem-vindo ao`;
+            heroTitle.parentNode.insertBefore(greetingElement, heroTitle);
         }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            if (e.altKey) {
+                switch (e.key.toLowerCase()) {
+                    case 'n':
+                        e.preventDefault();
+                        window.location.href = "{{ url_for('main.lancar_os') }}";
+                        break;
+                    case 'd':
+                        e.preventDefault();
+                        window.location.href = "{{ url_for('main.dashboard') }}";
+                        break;
+                    case 'm':
+                        e.preventDefault();
+                        window.location.href = "{{ url_for('main.manutencoes_andamento') }}";
+                        break;
+                    case 'c':
+                        e.preventDefault();
+                        window.location.href = "{{ url_for('main.manutencoes_concluidas') }}";
+                        break;
+                }
+            }
+
+            // Show shortcuts modal with '?' key
+            if (e.key === '?' && !e.shiftKey) {
+                e.preventDefault();
+                showShortcutsModal();
+            }
+
+            // Close modal with Escape
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal.show');
+                modals.forEach(modal => {
+                    bootstrap.Modal.getInstance(modal)?.hide();
+                });
+            }
+        });
+
+        // Add pulse animation to main action cards
+        setTimeout(() => {
+            document.querySelectorAll('.action-card').forEach(card => {
+                card.classList.add('pulse-on-load');
+                setTimeout(() => {
+                    card.classList.remove('pulse-on-load');
+                }, 4000);
+            });
+        }, 1000);
+
+        // Add tooltip to show shortcuts
+        const actionCards = document.querySelectorAll('.action-card');
+        actionCards.forEach(card => {
+            const shortcut = card.querySelector('small');
+            if (shortcut) {
+                card.setAttribute('data-bs-toggle', 'tooltip');
+                card.setAttribute('title', 'Clique ou use o atalho do teclado');
+            }
+        });
+
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     });
-    
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
 
-// Global functions
-function showSupportModal() {
-    const modal = new bootstrap.Modal(document.getElementById('supportModal') || createSupportModal());
-    modal.show();
-}
+    // Global functions
+    function showSupportModal() {
+        const modal = new bootstrap.Modal(document.getElementById('supportModal') || createSupportModal());
+        modal.show();
+    }
 
-function showShortcutsModal() {
-    const modal = new bootstrap.Modal(document.getElementById('shortcutsModal'));
-    modal.show();
-}
+    function showShortcutsModal() {
+        const modal = new bootstrap.Modal(document.getElementById('shortcutsModal'));
+        modal.show();
+    }
 
-function createSupportModal() {
-    const modalHtml = `
+    function createSupportModal() {
+        const modalHtml = `
         <div class="modal fade" id="supportModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -782,35 +833,35 @@ function createSupportModal() {
             </div>
         </div>
     `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    return document.getElementById('supportModal');
-}
 
-// Add some easter eggs
-let konamiCode = [];
-const konamiSequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
-
-document.addEventListener('keydown', function(e) {
-    konamiCode.push(e.keyCode);
-    
-    if (konamiCode.length > konamiSequence.length) {
-        konamiCode.shift();
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        return document.getElementById('supportModal');
     }
-    
-    if (konamiCode.join(',') === konamiSequence.join(',')) {
-        const heroSection = document.querySelector('.hero-section');
-        if (heroSection) {
-            heroSection.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%)';
-            heroSection.classList.add('pulse-on-load');
-            
-            setTimeout(() => {
-                heroSection.style.background = '';
-                heroSection.classList.remove('pulse-on-load');
-            }, 3000);
+
+    // Add some easter eggs
+    let konamiCode = [];
+    const konamiSequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
+
+    document.addEventListener('keydown', function (e) {
+        konamiCode.push(e.keyCode);
+
+        if (konamiCode.length > konamiSequence.length) {
+            konamiCode.shift();
         }
-        konamiCode = [];
-    }
-});
+
+        if (konamiCode.join(',') === konamiSequence.join(',')) {
+            const heroSection = document.querySelector('.hero-section');
+            if (heroSection) {
+                heroSection.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%)';
+                heroSection.classList.add('pulse-on-load');
+
+                setTimeout(() => {
+                    heroSection.style.background = '';
+                    heroSection.classList.remove('pulse-on-load');
+                }, 3000);
+            }
+            konamiCode = [];
+        }
+    });
 </script>
 {% endblock %}

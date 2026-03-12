@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, TextAreaField, SubmitField, FileField, BooleanField, RadioField, PasswordField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional
@@ -194,3 +195,23 @@ class ResetPasswordForm(FlaskForm):
     password = PasswordField('Nova Senha', validators=[DataRequired(), Length(min=6)])
     confirm_password = PasswordField('Confirmar Nova Senha', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Redefinir Senha')
+
+class CalendarioForm(FlaskForm):
+    # Usado para editar um dia específico ou como base para lista
+    data = StringField('Data', render_kw={'readonly': True})
+    eh_dia_util = BooleanField('Dia Útil')
+    descricao = StringField('Descrição')
+    submit = SubmitField('Salvar')
+
+class ParametrosMaquinaForm(FlaskForm):
+    maquina_id = SelectField('Máquina', coerce=int, validators=[DataRequired()])
+    mes = SelectField('Mês', coerce=int, choices=[(i, i) for i in range(1, 13)], validators=[DataRequired()])
+    ano = SelectField('Ano', coerce=int, validators=[DataRequired()])
+    horas_turno_dia = StringField('Horas/Dia', validators=[DataRequired()])
+    esta_ativa = BooleanField('Está Ativa', default=True)
+    submit = SubmitField('Salvar')
+    
+    def __init__(self, *args, **kwargs):
+        super(ParametrosMaquinaForm, self).__init__(*args, **kwargs)
+        self.maquina_id.choices = [(eq.id, f"{eq.codigo} - {eq.nome}") for eq in Equipamento.query.order_by(Equipamento.codigo).all()]
+        self.ano.choices = [(y, y) for y in range(datetime.now().year - 1, datetime.now().year + 2)]

@@ -106,3 +106,20 @@ class User(db.Model, UserMixin):
 
     def get_id(self):
         return str(self.id)
+
+class CalendarioOperacional(db.Model):
+    __tablename__ = 'calendario_operacional'
+    data = db.Column(db.Date, primary_key=True)
+    eh_dia_util = db.Column(db.Boolean, default=True)
+    descricao = db.Column(db.String(255))
+
+class ParametroMaquinaMensal(db.Model):
+    __tablename__ = 'parametros_maquina_mensal'
+    id = db.Column(db.Integer, primary_key=True)
+    maquina_id = db.Column(db.Integer, db.ForeignKey('equipamentos.id'), nullable=False)
+    mes = db.Column(db.Integer, nullable=False)
+    ano = db.Column(db.Integer, nullable=False)
+    horas_turno_dia = db.Column(db.Float, default=8.0)
+    esta_ativa = db.Column(db.Boolean, default=True)
+    
+    maquina = db.relationship('Equipamento', backref='parametros_mensais')

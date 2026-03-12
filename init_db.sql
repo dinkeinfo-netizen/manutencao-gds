@@ -15,13 +15,32 @@ CREATE TABLE IF NOT EXISTS mecanicos (
     telefone VARCHAR(20)
 );
 
+-- Table: checklist_templates
+CREATE TABLE IF NOT EXISTS checklist_templates (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    descricao VARCHAR(255),
+    ativo BOOLEAN DEFAULT TRUE
+);
+
+-- Table: checklist_itens
+CREATE TABLE IF NOT EXISTS checklist_itens (
+    id SERIAL PRIMARY KEY,
+    template_id INT NOT NULL,
+    pergunta VARCHAR(255) NOT NULL,
+    ordem INT DEFAULT 0,
+    FOREIGN KEY (template_id) REFERENCES checklist_templates(id) ON DELETE CASCADE
+);
+
 -- Table: equipamentos
 CREATE TABLE IF NOT EXISTS equipamentos (
     id SERIAL PRIMARY KEY,
     codigo VARCHAR(50) NOT NULL UNIQUE,
     nome VARCHAR(100) NOT NULL,
     localizacao_id INT,
-    FOREIGN KEY (localizacao_id) REFERENCES localizacoes(id)
+    checklist_template_id INT,
+    FOREIGN KEY (localizacao_id) REFERENCES localizacoes(id),
+    FOREIGN KEY (checklist_template_id) REFERENCES checklist_templates(id)
 );
 
 -- Table: users (needed before ordens_servico maybe, but definitely for admin)
@@ -66,6 +85,35 @@ CREATE TABLE IF NOT EXISTS ordens_servico (
     FOREIGN KEY (localizacao_id) REFERENCES localizacoes(id),
     FOREIGN KEY (equipamento_id) REFERENCES equipamentos(id),
     FOREIGN KEY (mecanico_id) REFERENCES mecanicos(id)
+);
+
+-- Table: checklist_respostas
+CREATE TABLE IF NOT EXISTS checklist_respostas (
+    id SERIAL PRIMARY KEY,
+    ordem_servico_id INT NOT NULL,
+    checklist_item_id INT NOT NULL,
+    valor BOOLEAN,
+    observacao VARCHAR(255),
+    FOREIGN KEY (ordem_servico_id) REFERENCES ordens_servico(id),
+    FOREIGN KEY (checklist_item_id) REFERENCES checklist_itens(id)
+);
+
+-- Table: calendario_operacional
+CREATE TABLE IF NOT EXISTS calendario_operacional (
+    data DATE PRIMARY KEY,
+    eh_dia_util BOOLEAN DEFAULT TRUE,
+    descricao VARCHAR(255)
+);
+
+-- Table: parametros_maquina_mensal
+CREATE TABLE IF NOT EXISTS parametros_maquina_mensal (
+    id SERIAL PRIMARY KEY,
+    maquina_id INT NOT NULL,
+    mes INT NOT NULL,
+    ano INT NOT NULL,
+    horas_turno_dia FLOAT DEFAULT 8.0,
+    esta_ativa BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (maquina_id) REFERENCES equipamentos(id)
 );
 
 -- Insert default admin user

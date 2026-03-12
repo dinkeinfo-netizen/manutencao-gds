@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-4">Manutenções em Andamento – RQ MAN – 073 01</h2>
-    
+
     <div class="d-flex justify-content-between mb-3">
         <a href="{{ url_for('main.lancar_os') }}" class="btn btn-primary">Lançar OS</a>
         <a href="{{ url_for('main.manutencoes_concluidas') }}" class="btn btn-secondary">Ver Concluídas</a>
@@ -35,20 +35,22 @@
                     <td>{{ os.data_inicio.strftime('%d/%m/%Y %H:%M') }}</td>
                     <td>{{ os.tempo_decorrido|int }}h-{{ (os.tempo_decorrido * 60 % 60)|int }}m</td>
                     <td>
-                        <span class="badge bg-{% if os.status == 'Aberta' %}info{% elif os.status == 'Em andamento' %}warning{% else %}success{% endif %}">
+                        <span
+                            class="badge bg-{% if os.status == 'Aberta' %}info{% elif os.status == 'Em andamento' %}warning{% else %}success{% endif %}">
                             {{ os.status }}
                         </span>
                     </td>
                     <td>
                         {% if os.status == 'Aberta' %}
-                            <form action="{{ url_for('main.iniciar_os', os_id=os.id) }}" method="POST" style="display: inline;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-warning btn-sm">Iniciar</button>
-                            </form>
+                        <button type="button" class="btn btn-warning btn-sm btn-iniciar" data-bs-toggle="modal"
+                            data-bs-target="#modalIniciar" data-os-id="{{ os.id }}" data-os-numero="{{ os.numero_os }}">
+                            Iniciar
+                        </button>
                         {% elif os.status == 'Em andamento' %}
-                            <form action="{{ url_for('main.finalizar_os', os_id=os.id) }}" method="GET" style="display: inline;">
-                                <button type="submit" class="btn btn-success btn-sm">Finalizar</button>
-                            </form>
+                        <form action="{{ url_for('main.finalizar_os', os_id=os.id) }}" method="GET"
+                            style="display: inline;">
+                            <button type="submit" class="btn btn-success btn-sm">Finalizar</button>
+                        </form>
                         {% endif %}
                     </td>
                 </tr>
@@ -61,4 +63,55 @@
         </table>
     </div>
 </div>
+
+<!-- Modal Iniciar OS -->
+<div class="modal fade" id="modalIniciar" tabindex="-1" aria-labelledby="modalIniciarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalIniciarLabel">Iniciar Atendimento - OS <span id="modalNumeroOS"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formIniciarOS" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <p>Selecione o mecânico que realizará este atendimento:</p>
+                    <div class="mb-3">
+                        <label for="mecanico_id" class="form-label">Mecânico</label>
+                        <select class="form-select" name="mecanico_id" id="mecanico_id" required>
+                            <option value="">-- Selecione um Mecânico --</option>
+                            {% for m in mecanicos %}
+                            <option value="{{ m.id }}">{{ m.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Confirmar Início</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalIniciar = document.getElementById('modalIniciar');
+        if (modalIniciar) {
+            modalIniciar.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const osId = button.getAttribute('data-os-id');
+                const osNumero = button.getAttribute('data-os-numero');
+
+                const modalNumeroOS = modalIniciar.querySelector('#modalNumeroOS');
+                const formIniciarOS = modalIniciar.querySelector('#formIniciarOS');
+
+                modalNumeroOS.textContent = osNumero;
+                formIniciarOS.action = "{{ url_for('main.iniciar_os', os_id=0) }}".replace('/0', '/' + osId);
+            });
+        }
+    });
+</script>
 {% endblock %}

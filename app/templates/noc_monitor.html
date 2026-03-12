@@ -57,7 +57,7 @@
 
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
             height: calc(100vh - 120px);
             overflow-y: auto;
@@ -219,6 +219,10 @@
             <div class="os-info">
                 <div class="text-muted" style="font-size: 0.8rem;">
                     Solicitante: {{ os.solicitante }}
+                    {% if os.status == 'Em andamento' and os.nome_mecanico %}
+                    <br>Mecânico: <span style="color: var(--accent-green); font-weight: bold;">{{ os.nome_mecanico
+                        }}</span>
+                    {% endif %}
                 </div>
                 <div class="os-timer" title="Tempo total de espera">
                     <i class="far fa-clock me-2"></i>{{ os.tempo_decorrido }}

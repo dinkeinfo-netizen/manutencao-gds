@@ -75,7 +75,8 @@
             <div class="kpi-icon"><i class="fas fa-tools"></i></div>
             <div class="kpi-content">
                 <div class="kpi-value">
-                    <span id="kpi-mttr" data-counter="{{ mttr_geral }}">{{ mttr_geral }}</span><small class="kpi-unit">h</small>
+                    <span id="kpi-mttr" data-counter="{{ mttr_geral }}">{{ mttr_geral }}</span><small
+                        class="kpi-unit">h</small>
                 </div>
                 <div class="kpi-label">MTTR</div>
                 <small class="text-muted">Reparo</small>
@@ -88,7 +89,8 @@
             <div class="kpi-icon"><i class="fas fa-heartbeat"></i></div>
             <div class="kpi-content">
                 <div class="kpi-value">
-                    <span id="kpi-mtbf" data-counter="{{ mtbf_geral }}">{{ mtbf_geral }}</span><small class="kpi-unit">h</small>
+                    <span id="kpi-mtbf" data-counter="{{ mtbf_geral }}">{{ mtbf_geral }}</span><small
+                        class="kpi-unit">h</small>
                 </div>
                 <div class="kpi-label">MTBF</div>
                 <small class="text-muted">Entre Falhas</small>
@@ -97,11 +99,13 @@
     </div>
 
     <div class="col-lg-2 col-md-4 col-6 mb-4">
-        <div class="kpi-card {% if disponibilidade_geral >= 90 %}kpi-success{% else %}kpi-danger{% endif %}" data-aos="fade-up" data-aos-delay="600">
+        <div class="kpi-card {% if disponibilidade_geral >= 90 %}kpi-success{% else %}kpi-danger{% endif %}"
+            data-aos="fade-up" data-aos-delay="600">
             <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
             <div class="kpi-content">
                 <div class="kpi-value">
-                    <span id="kpi-disponibilidade" data-counter="{{ disponibilidade_geral }}">{{ disponibilidade_geral }}</span><small class="kpi-unit">%</small>
+                    <span id="kpi-disponibilidade" data-counter="{{ disponibilidade_geral }}">{{ disponibilidade_geral
+                        }}</span><small class="kpi-unit">%</small>
                 </div>
                 <div class="kpi-label">Disponibilidade</div>
                 <small class="text-muted">Meta: 90%</small>
@@ -121,7 +125,8 @@
                             <i class="fas fa-bolt me-2 text-warning"></i>
                             Análise de Pareto - Top 5 Críticos
                         </h4>
-                        <p class="analysis-subtitle">Equipamentos com maior impacto na disponibilidade (Corretivas 30 dias)</p>
+                        <p class="analysis-subtitle">Equipamentos com maior impacto na disponibilidade (Corretivas 30
+                            dias)</p>
                     </div>
                 </div>
             </div>
@@ -145,7 +150,8 @@
                                             <span class="badge bg-danger">{{ equip.total_os }}</span>
                                         </td>
                                         <td class="text-center">
-                                            <span class="text-danger fw-bold">{{ "%.1f"|format(equip.total_downtime or 0) }}h</span>
+                                            <span class="text-danger fw-bold">{{ "%.1f"|format(equip.total_downtime or
+                                                0) }}h</span>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -1461,7 +1467,7 @@
 
         async initializeCharts() {
             try {
-                const response = await fetch('/api/stats/dashboard-data');
+                const response = await fetch('/api/dashboard/data');
                 const data = await response.json();
 
                 if (data.error) throw new Error(data.error);
@@ -1621,7 +1627,7 @@
         renderParetoChart(data) {
             const ctx = document.getElementById('chartPareto').getContext('2d');
             if (!ctx) return;
-            
+
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {

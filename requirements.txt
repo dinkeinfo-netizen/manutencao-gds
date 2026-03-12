@@ -12,3 +12,4 @@ flask_mail
 alembic
 flask_login
 openpyxl
+fpdf2

@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app, send_file
-from app.forms import OrdemServicoForm, MecanicoForm, EquipamentoForm, LocalizacaoForm, FinalizarOSForm, EditUserForm, ResetPasswordForm
+from app.forms import OrdemServicoForm, MecanicoForm, EquipamentoForm, LocalizacaoForm, FinalizarOSForm, EditUserForm, ResetPasswordForm, CalendarioForm, ParametrosMaquinaForm
 from app.extensions import db
-from app.models import Mecanico, Equipamento, Localizacao, OrdemServico, User, ChecklistTemplate, ChecklistItem, ChecklistResposta
+from app.models import Mecanico, Equipamento, Localizacao, OrdemServico, User, ChecklistTemplate, ChecklistItem, ChecklistResposta, CalendarioOperacional, ParametroMaquinaMensal
+from app.kpi_utils import get_dias_uteis, get_tempo_nominal_disponivel, populate_calendar_if_empty
 from app.email_service import enviar_email_nova_os, enviar_email_os_finalizada
 from datetime import datetime, timedelta
 import pandas as pd
@@ -15,6 +16,7 @@ import traceback
 import binascii
 from app.utils import role_required, converter_para_boolean
 from flask_login import current_user, login_required
+from app.pdf_utils import generate_os_pdf
 
 main_bp = Blueprint('main', __name__)
 
@@ -237,7 +239,8 @@ def manutencoes_andamento():
         else:
             os.tempo_decorrido = calcular_tempo_manutencao(os.data_inicio, datetime.now())
     
-    return render_template('manutencoes_andamento.html', ordens=ordens)
+    mecanicos = Mecanico.query.order_by(Mecanico.nome).all()
+    return render_template('manutencoes_andamento.html', ordens=ordens, mecanicos=mecanicos)
 
 @main_bp.route('/manutencoes-concluidas')
 @role_required('admin', 'mecanico')
@@ -260,20 +263,31 @@ def iniciar_os(os_id):
         flash(f'A OS {ordem_servico.numero_os} não pode ser iniciada. Status atual: {ordem_servico.status}', 'warning')
         return redirect(url_for('main.manutencoes_andamento'))
     
+    mecanico_id = request.form.get('mecanico_id')
+    if not mecanico_id:
+        flash('Por favor, selecione um mecânico.', 'danger')
+        return redirect(url_for('main.manutencoes_andamento'))
+        
     try:
+        mecanico = Mecanico.query.get(mecanico_id)
+        if not mecanico:
+            flash('Mecânico não encontrado.', 'danger')
+            return redirect(url_for('main.manutencoes_andamento'))
+
         # Atualiza o status e registra a data/hora de início da execução
         ordem_servico.status = 'Em andamento'
         ordem_servico.data_inicio_execucao = datetime.now()
+        ordem_servico.mecanico_id = mecanico.id
+        ordem_servico.nome_mecanico = mecanico.nome
         
         db.session.commit()
         
-        flash(f'OS {ordem_servico.numero_os} iniciada com sucesso!', 'success')
-        
+        flash(f'OS {ordem_servico.numero_os} iniciada por {mecanico.nome} com sucesso!', 'success')
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Erro ao iniciar OS {os_id}: {str(e)}")
         flash(f'Erro ao iniciar OS: {str(e)}', 'danger')
-    
+        
     return redirect(url_for('main.manutencoes_andamento'))
 
 # ========================================
@@ -425,18 +439,26 @@ def finalizar_os(os_id):
 
 
 @main_bp.route('/dashboard')
-@login_required
+@role_required('admin', 'mecanico')
 def dashboard():
+    # Garantir que o calendário está populado para o período
+    hoje = datetime.now()
+    inicio_periodo = hoje - timedelta(days=30)
+    
+    # Popula o mês atual e o anterior para garantir cobertura dos 30 dias
+    populate_calendar_if_empty(hoje.month, hoje.year)
+    mes_anterior = (hoje.replace(day=1) - timedelta(days=1))
+    populate_calendar_if_empty(mes_anterior.month, mes_anterior.year)
+
     # Estatísticas básicas
     total_os = OrdemServico.query.count()
     os_abertas = OrdemServico.query.filter_by(status='Aberta').count()
     os_andamento = OrdemServico.query.filter_by(status='Em andamento').count()
     os_concluidas = OrdemServico.query.filter_by(status='Concluída').count()
     
-    # Período de análise (últimos 30 dias)
-    hoje = datetime.now()
-    inicio_periodo = hoje - timedelta(days=30)
-    horas_totais_periodo = 30 * 24
+    # Tempo Nominal Disponível da Frota no Período
+    from app.kpi_utils import get_tempo_total_nominal_frota
+    horas_totais_periodo = get_tempo_total_nominal_frota(inicio_periodo, hoje)
 
     # MTTR Geral (Apenas Corretivas Concluídas no período)
     mttr_geral = db.session.query(
@@ -465,14 +487,16 @@ def dashboard():
     ).count()
 
     # MTBF (Mean Time Between Failures)
-    # Lógica: (Tempo Total - Tempo de Parada) / Número de Falhas
+    # Lógica: (Tempo Nominal Total - Tempo de Parada Corretiva) / Número de Falhas
     mtbf_geral = 0
     if num_falhas > 0:
         mtbf_geral = (horas_totais_periodo - downtime_total) / num_falhas
 
     # Disponibilidade (%)
-    # Lógica: (Tempo Total - Tempo de Parada) / Tempo Total * 100
-    disponibilidade_geral = ((horas_totais_periodo - downtime_total) / horas_totais_periodo) * 100
+    # Lógica: (Tempo Nominal Total - Tempo de Parada) / Tempo Nominal Total * 100
+    disponibilidade_geral = 0
+    if horas_totais_periodo > 0:
+        disponibilidade_geral = ((horas_totais_periodo - downtime_total) / horas_totais_periodo) * 100
 
     # Pareto: Top 5 equipamentos que geram mais corretivas
     pareto_equipamentos = db.session.query(
@@ -505,14 +529,21 @@ def dashboard():
                          pareto_equipamentos=pareto_equipamentos,
                          mttr_por_mecanico=mttr_por_mecanico)
 
-@main_bp.route('/api/stats/dashboard-data')
-@login_required
+@main_bp.route('/api/dashboard/data')
+@role_required('admin', 'mecanico')
 def api_dashboard_data():
     """Retorna todos os dados de indicadores para os gráficos Chart.js"""
     try:
+        from app.kpi_utils import get_tempo_total_nominal_frota
         hoje = datetime.now()
-        inicio_periodo = hoje - timedelta(days=30)
-        horas_totais_periodo = 30 * 24
+        inicio_periodo = hoy_menos_30 = hoje - timedelta(days=30)
+        
+        # Garante calendário
+        populate_calendar_if_empty(hoje.month, hoje.year)
+        mes_anterior = (hoje.replace(day=1) - timedelta(days=1))
+        populate_calendar_if_empty(mes_anterior.month, mes_anterior.year)
+
+        horas_totais_periodo = get_tempo_total_nominal_frota(inicio_periodo, hoje)
 
         # MTTR (Corretivas Concluídas)
         mttr_data = db.session.query(
@@ -569,7 +600,7 @@ def api_dashboard_data():
 
         mttr_geral = downtime_total / num_falhas if num_falhas > 0 else 0
         mtbf_geral = (horas_totais_periodo - downtime_total) / num_falhas if num_falhas > 0 else 0
-        disponibilidade = ((horas_totais_periodo - downtime_total) / horas_totais_periodo) * 100
+        disponibilidade = ((horas_totais_periodo - downtime_total) / horas_totais_periodo * 100) if horas_totais_periodo > 0 else 0
 
         return jsonify({
             'kpis': {
@@ -586,8 +617,8 @@ def api_dashboard_data():
                 'values': [round(float(item.mttr or 0), 2) for item in mttr_data]
             },
             'tendencia': {
-                'labels': [item.data.strftime('%d/%m') for item in mttr_tendencia],
-                'values': [round(float(item.mttr or 0), 2) for item in mttr_tendencia]
+                'labels': [item.data.strftime('%d/%m') for item in mttr_tendencia] if mttr_tendencia else [],
+                'values': [round(float(item.mttr or 0), 2) for item in mttr_tendencia] if mttr_tendencia else []
             },
             'mecanicos': {
                 'labels': [item.nome for item in mttr_mecanicos],
@@ -1087,6 +1118,29 @@ def detalhes_os(os_id):
     return render_template('detalhes_os.html', os=os)
 
 
+@main_bp.route('/detalhes-os/<int:os_id>/pdf')
+def detalhes_os_pdf(os_id):
+    """Gera o PDF da Ordem de Serviço"""
+    os_entry = OrdemServico.query.get_or_404(os_id)
+    
+    try:
+        pdf_data = generate_os_pdf(os_entry)
+        
+        # Envia o arquivo como download
+        filename = f"OS_{os_entry.numero_os}.pdf"
+        
+        return send_file(
+            BytesIO(pdf_data),
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        current_app.logger.error(f"Erro ao gerar PDF: {str(e)}")
+        flash(f"Erro ao gerar PDF: {str(e)}", "danger")
+        return redirect(url_for('main.detalhes_os', os_id=os_id))
+
+
 @main_bp.route('/excluir-os/<int:os_id>', methods=['POST'])
 def excluir_os(os_id):
     os = OrdemServico.query.get_or_404(os_id)
@@ -1370,3 +1424,86 @@ def associar_checklist_equipamento():
 def api_checklist_itens(template_id):
     itens = ChecklistItem.query.filter_by(template_id=template_id).order_by(ChecklistItem.ordem).all()
     return jsonify([{'id': i.id, 'pergunta': i.pergunta} for i in itens])
+
+
+# ========================================
+# Parametrização de Horas e Calendário
+# ========================================
+
+@main_bp.route('/config/calendario', methods=['GET', 'POST'])
+@role_required('admin')
+def config_calendario():
+    mes = request.args.get('mes', datetime.now().month, type=int)
+    ano = request.args.get('ano', datetime.now().year, type=int)
+    
+    # Garante que o calendário existe
+    populate_calendar_if_empty(mes, ano)
+    
+    dias = CalendarioOperacional.query.filter(
+        db.extract('month', CalendarioOperacional.data) == mes,
+        db.extract('year', CalendarioOperacional.data) == ano
+    ).order_by(CalendarioOperacional.data).all()
+    
+    return render_template('config/calendario.html', dias=dias, mes=mes, ano=ano)
+
+@main_bp.route('/config/calendario/toggle', methods=['POST'])
+@role_required('admin')
+def toggle_dia_util():
+    data_str = request.form.get('data')
+    if data_str:
+        dia = CalendarioOperacional.query.get(data_str)
+        if dia:
+            dia.eh_dia_util = not dia.eh_dia_util
+            db.session.commit()
+            return jsonify({'success': True, 'eh_dia_util': dia.eh_dia_util})
+    return jsonify({'success': False}), 400
+
+@main_bp.route('/config/parametros-maquina', methods=['GET', 'POST'])
+@role_required('admin')
+def config_parametros_maquina():
+    mes_filtro = request.args.get('mes', datetime.now().month, type=int)
+    ano_filtro = request.args.get('ano', datetime.now().year, type=int)
+    
+    form = ParametrosMaquinaForm()
+    
+    # Pre-prender filtros se for GET para facilitar o cadastro
+    if request.method == 'GET':
+        form.mes.data = mes_filtro
+        form.ano.data = ano_filtro
+    
+    if form.validate_on_submit():
+        maquina_id = form.maquina_id.data
+        mes = form.mes.data
+        ano = form.ano.data
+        
+        param = ParametroMaquinaMensal.query.filter_by(
+            maquina_id=maquina_id, mes=mes, ano=ano
+        ).first()
+        
+        if not param:
+            param = ParametroMaquinaMensal(
+                maquina_id=maquina_id, mes=mes, ano=ano
+            )
+            db.session.add(param)
+            
+        try:
+            param.horas_turno_dia = float(form.horas_turno_dia.data.replace(',', '.'))
+            param.esta_ativa = form.esta_ativa.data
+            db.session.commit()
+            flash('Parâmetros salvos com sucesso!', 'success')
+        except ValueError:
+            flash('Erro: Horas Turno Dia deve ser um número.', 'danger')
+            
+        return redirect(url_for('main.config_parametros_maquina', mes=mes, ano=ano))
+    
+    parametros = ParametroMaquinaMensal.query.filter_by(
+        mes=mes_filtro, ano=ano_filtro
+    ).order_by(
+        ParametroMaquinaMensal.id.desc()
+    ).all()
+    
+    return render_template('config/parametros_maquina.html', 
+                          form=form, 
+                          parametros=parametros, 
+                          mes_filtro=mes_filtro, 
+                          ano_filtro=ano_filtro)

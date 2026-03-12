@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h2><i class="fas fa-calendar-alt text-primary"></i> Calendário Operacional</h2>
+            <p class="text-muted">Marque os dias úteis e feriados para cálculo de disponibilidade.</p>
+        </div>
+        <div class="col-auto">
+            <form class="row g-2 align-items-center" method="GET">
+                <div class="col-auto">
+                    <select name="mes" class="form-select">
+                        {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if m==mes %}selected{% endif %}>{{ m }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <select name="ano" class="form-select">
+                        {% for a in range(ano-1, ano+2) %}
+                        <option value="{{ a }}" {% if a==ano %}selected{% endif %}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data</th>
+                            <th>Dia da Semana</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dia in dias %}
+                        <tr id="row-{{ dia.data }}" class="{% if not dia.eh_dia_util %}table-warning{% endif %}">
+                            <td>{{ dia.data.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% set weekdays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+                                %}
+                                {{ weekdays[dia.data.weekday()] }}
+                            </td>
+                            <td>
+                                <span id="badge-{{ dia.data }}"
+                                    class="badge {% if dia.eh_dia_util %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if dia.eh_dia_util %}Dia Útil{% else %}Não Útil / Feriado{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary toggle-btn" data-date="{{ dia.data }}">
+                                    Alternar Status
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const date = this.getAttribute('data-date');
+            const formData = new FormData();
+            formData.append('data', date);
+            formData.append('csrf_token', '{{ csrf_token() }}');
+
+            fetch("{{ url_for('main.toggle_dia_util') }}", {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const badge = document.getElementById('badge-' + date);
+                        const row = document.getElementById('row-' + date);
+
+                        if (data.eh_dia_util) {
+                            badge.className = 'badge bg-success';
+                            badge.innerText = 'Dia Útil';
+                            row.classList.remove('table-warning');
+                        } else {
+                            badge.className = 'badge bg-danger';
+                            badge.innerText = 'Não Útil / Feriado';
+                            row.classList.add('table-warning');
+                        }
+                    }
+                });
+        });
+    });
+</script>
+{% endblock %}

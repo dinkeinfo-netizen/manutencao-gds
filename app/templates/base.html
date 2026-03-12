@@ -366,16 +366,51 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .main-content {
-                margin: 10px;
-                padding: 20px;
+                margin: 0;
+                border-radius: 0;
+                padding: 1.25rem 1rem;
+                box-shadow: none;
+                border: none;
             }
 
             .navbar-brand {
                 font-size: 1.1rem;
+                white-space: normal;
             }
 
             .stats-number {
-                font-size: 2rem;
+                font-size: 1.8rem;
+            }
+
+            /* Better touch targets for mobile */
+            .btn {
+                padding: 0.75rem 1.25rem;
+                min-height: 44px;
+                /* Apple recommendation for touch */
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .nav-link {
+                padding: 0.75rem 1rem !important;
+            }
+
+            .form-control,
+            .form-select {
+                padding: 0.875rem;
+                font-size: 16px;
+                /* Prevents auto-zoom on iOS */
+            }
+
+            .table td,
+            .table th {
+                padding: 0.875rem 0.5rem;
+            }
+
+            .footer {
+                padding: 1.5rem 0;
+                margin-top: 2rem;
             }
         }
 
