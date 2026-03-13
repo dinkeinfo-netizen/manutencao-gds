@@ -34,7 +34,10 @@ def generate_os_pdf(os_data):
     # OS Number and Title
     pdf.set_font('helvetica', 'B', 12)
     pdf.set_fill_color(248, 250, 252)
-    pdf.cell(0, 10, f'Ordem de Serviço #{os_data.numero_os}', ln=True, fill=True)
+    title = f'Ordem de Serviço #{os_data.numero_os}'
+    if os_data.sap:
+        title += f' | SAP: {os_data.sap}'
+    pdf.cell(0, 10, title, ln=True, fill=True)
     
     # Seção 1: Informações da Solicitação
     pdf.ln(2)
@@ -56,6 +59,7 @@ def generate_os_pdf(os_data):
         ('Tipo de Parada:', os_data.tipo_parada.title() if os_data.tipo_parada else 'N/A'),
         ('Data Início:', os_data.data_inicio.strftime('%d/%m/%Y %H:%M') if os_data.data_inicio else 'N/A'),
         ('Data Término:', os_data.data_termino.strftime('%d/%m/%Y %H:%M') if os_data.data_termino else 'N/A'),
+        ('Código SAP:', os_data.sap or 'N/A'),
     ]
     
     for label, value in data_items:
