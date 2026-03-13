@@ -443,7 +443,7 @@ def finalizar_os(os_id):
 def dashboard():
     # Garantir que o calendário está populado para o período
     hoje = datetime.now()
-    inicio_periodo = hoje - timedelta(days=30)
+    inicio_periodo = hoje.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     
     # Popula o mês atual e o anterior para garantir cobertura dos 30 dias
     populate_calendar_if_empty(hoje.month, hoje.year)
@@ -456,9 +456,13 @@ def dashboard():
     os_andamento = OrdemServico.query.filter_by(status='Em andamento').count()
     os_concluidas = OrdemServico.query.filter_by(status='Concluída').count()
     
-    # Tempo Nominal Disponível da Frota no Período
-    from app.kpi_utils import get_tempo_total_nominal_frota
-    horas_totais_periodo = get_tempo_total_nominal_frota(inicio_periodo, hoje)
+    import calendar
+    ultimo_dia_mes = calendar.monthrange(hoje.year, hoje.month)[1]
+    fim_mes = hoje.replace(day=ultimo_dia_mes, hour=23, minute=59, second=59)
+
+    # Tempo Nominal Disponível do Calendário no Mês Inteiro (Regra: Dias Úteis * Jornada)
+    from app.kpi_utils import get_tempo_total_calendario_nominal
+    horas_totais_periodo = get_tempo_total_calendario_nominal(inicio_periodo, fim_mes)
 
     # MTTR Geral (Apenas Corretivas Concluídas no período)
     mttr_geral = db.session.query(
@@ -498,15 +502,17 @@ def dashboard():
     if horas_totais_periodo > 0:
         disponibilidade_geral = ((horas_totais_periodo - downtime_total) / horas_totais_periodo) * 100
 
-    # Pareto: Top 5 equipamentos que geram mais corretivas
+    # Pareto: Top 5 equipamentos que geram mais corretivas (no Mês)
     pareto_equipamentos = db.session.query(
-        Equipamento.nome,
-        func.count(OrdemServico.id).label('total_os'),
-        func.sum(OrdemServico.tempo_manutencao).label('total_downtime')
+        Equipamento.codigo,
+        func.sum(OrdemServico.tempo_manutencao).label('total_downtime'),
+        func.count(OrdemServico.id).label('total_falhas')
     ).join(OrdemServico).filter(
         OrdemServico.tipo_manutencao == 'corretiva',
-        OrdemServico.data_inicio >= inicio_periodo
-    ).group_by(Equipamento.id).order_by(func.count(OrdemServico.id).desc()).limit(5).all()
+        OrdemServico.status == 'Concluída',
+        OrdemServico.data_termino >= inicio_periodo,
+        OrdemServico.data_termino <= fim_mes
+    ).group_by(Equipamento.id).order_by(func.sum(OrdemServico.tempo_manutencao).desc()).limit(5).all()
 
     # MTTR por Mecânico (Concluídas)
     mttr_por_mecanico = db.session.query(
@@ -536,14 +542,19 @@ def api_dashboard_data():
     try:
         from app.kpi_utils import get_tempo_total_nominal_frota
         hoje = datetime.now()
-        inicio_periodo = hoy_menos_30 = hoje - timedelta(days=30)
+        inicio_periodo = hoje.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
         # Garante calendário
         populate_calendar_if_empty(hoje.month, hoje.year)
         mes_anterior = (hoje.replace(day=1) - timedelta(days=1))
         populate_calendar_if_empty(mes_anterior.month, mes_anterior.year)
 
-        horas_totais_periodo = get_tempo_total_nominal_frota(inicio_periodo, hoje)
+        import calendar
+        ultimo_dia_mes = calendar.monthrange(hoje.year, hoje.month)[1]
+        fim_mes = hoje.replace(day=ultimo_dia_mes, hour=23, minute=59, second=59)
+
+        from app.kpi_utils import get_tempo_total_calendario_nominal
+        horas_totais_periodo = get_tempo_total_calendario_nominal(inicio_periodo, fim_mes)
 
         # MTTR (Corretivas Concluídas)
         mttr_data = db.session.query(
@@ -567,12 +578,15 @@ def api_dashboard_data():
         ).group_by(func.date(OrdemServico.data_termino)).order_by('data').all()
 
         # Downtime por Equipamento (Pareto)
-        pareto_data = db.session.query(
+        pareto_query = db.session.query(
             Equipamento.codigo,
-            func.sum(OrdemServico.tempo_manutencao).label('downtime')
+            func.sum(OrdemServico.tempo_manutencao).label('downtime'),
+            func.count(OrdemServico.id).label('counts')
         ).join(OrdemServico).filter(
             OrdemServico.tipo_manutencao == 'corretiva',
-            OrdemServico.data_inicio >= inicio_periodo
+            OrdemServico.status == 'Concluída',
+            OrdemServico.data_termino >= inicio_periodo,
+            OrdemServico.data_termino <= fim_mes
         ).group_by(Equipamento.id).order_by(func.sum(OrdemServico.tempo_manutencao).desc()).limit(5).all()
 
         # Performance Mecânicos
@@ -609,8 +623,9 @@ def api_dashboard_data():
                 'disponibilidade': round(float(disponibilidade or 0), 2)
             },
             'pareto': {
-                'labels': [item.codigo for item in pareto_data],
-                'values': [round(float(item.downtime or 0), 2) for item in pareto_data]
+                'labels': [item.codigo for item in pareto_query],
+                'values': [round(float(item.downtime or 0), 2) for item in pareto_query],
+                'counts': [int(item.counts) for item in pareto_query]
             },
             'mttr_equipamentos': {
                 'labels': [item.codigo for item in mttr_data],
@@ -1142,14 +1157,40 @@ def detalhes_os_pdf(os_id):
 
 
 @main_bp.route('/excluir-os/<int:os_id>', methods=['POST'])
+@role_required('admin')
 def excluir_os(os_id):
-    os = OrdemServico.query.get_or_404(os_id)
+    os_obj = OrdemServico.query.get_or_404(os_id)
     try:
-        db.session.delete(os)
+        # 1. Limpar arquivos físicos de assinaturas
+        signatures_dir = os.path.join(current_app.root_path, 'static', 'signatures')
+        if os_obj.assinatura_mecanico and not os_obj.assinatura_mecanico.startswith('data:'):
+             try:
+                 path = os.path.join(signatures_dir, os_obj.assinatura_mecanico)
+                 if os.path.exists(path): os.remove(path)
+             except: pass
+             
+        if os_obj.assinatura_conferente and not os_obj.assinatura_conferente.startswith('data:'):
+             try:
+                 path = os.path.join(signatures_dir, os_obj.assinatura_conferente)
+                 if os.path.exists(path): os.remove(path)
+             except: pass
+
+        # 2. Limpar arquivos físicos de fotos
+        upload_dir = os.path.join(current_app.root_path, 'static', 'uploads')
+        if os_obj.fotos_paths:
+            for foto in os_obj.fotos_paths:
+                try:
+                    path = os.path.join(upload_dir, foto)
+                    if os.path.exists(path): os.remove(path)
+                except: pass
+
+        # 3. Deletar do banco (o checklist_respostas será deletado via cascade definido no model)
+        db.session.delete(os_obj)
         db.session.commit()
-        flash('OS excluída com sucesso!', 'success')
+        flash(f'OS {os_obj.numero_os} e seus arquivos associados foram excluídos.', 'success')
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Erro ao excluir OS {os_id}: {str(e)}")
         flash(f'Erro ao excluir OS: {str(e)}', 'danger')
     return redirect(url_for('main.manutencoes_concluidas'))
 

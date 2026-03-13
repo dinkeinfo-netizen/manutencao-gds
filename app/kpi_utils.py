@@ -70,9 +70,47 @@ def get_tempo_nominal_periodo(maquina_id, data_inicio, data_fim):
             if param.esta_ativa:
                 total_horas += param.horas_turno_dia
         else:
-            # Default 8h se não parametrizado
-            total_horas += 8.0
+            # BUG FIX: Usar o padrão de 10h se não houver parâmetro, 
+            # para não zerar a disponibilidade injustamente.
+            total_horas += 10.0
             
+    return total_horas
+
+def get_tempo_total_calendario_nominal(data_inicio, data_fim):
+    """
+    Retorna o tempo total nominal do calendário (dias úteis * jornada)
+    sem multiplicar pela quantidade de equipamentos. 
+    Usa a maior jornada encontrada nos parâmetros ou o padrão de 10h.
+    """
+    d_inicio = data_inicio.date() if isinstance(data_inicio, datetime) else data_inicio
+    d_fim = data_fim.date() if isinstance(data_fim, datetime) else data_fim
+        
+    dias_periodo = CalendarioOperacional.query.filter(
+        CalendarioOperacional.data >= d_inicio,
+        CalendarioOperacional.data <= d_fim,
+        CalendarioOperacional.eh_dia_util == True
+    ).all()
+    
+    if not dias_periodo:
+        return 0.0
+        
+    total_horas = 0.0
+    cache_params = {}
+    
+    for dia in dias_periodo:
+        key = (dia.data.month, dia.data.year)
+        if key not in cache_params:
+            # Busca a jornada máxima definida para qualquer equipamento ativo no mês
+            # Se não houver, usa o padrão global (10.0 ou 8.0 se o usuário mudou no código)
+            max_horas = db.session.query(db.func.max(ParametroMaquinaMensal.horas_turno_dia)).filter_by(
+                mes=dia.data.month,
+                ano=dia.data.year,
+                esta_ativa=True
+            ).scalar()
+            cache_params[key] = max_horas if max_horas is not None else 10.0
+            
+        total_horas += cache_params[key]
+        
     return total_horas
 
 def get_tempo_total_nominal_frota(data_inicio, data_fim):

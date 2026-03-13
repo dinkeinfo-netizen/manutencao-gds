@@ -1520,7 +1520,7 @@
                     <tr class="data-row">
                         <td class="equipment-name"><strong>${data.labels[i]}</strong></td>
                         <td class="text-center">
-                            <span class="badge bg-danger">Calculando...</span>
+                            <span class="badge bg-danger">${data.counts[i]} Falhas</span>
                         </td>
                         <td class="text-center">
                             <span class="text-danger fw-bold">${data.values[i]}h</span>
@@ -1678,7 +1678,7 @@
                     }
 
                     if (isDecimal) {
-                        counter.textContent = current.toFixed(1);
+                        counter.textContent = current.toFixed(2);
                     } else {
                         counter.textContent = Math.floor(current);
                     }

@@ -46,7 +46,7 @@ class ChecklistResposta(db.Model):
     valor = db.Column(db.Boolean)  # True = OK, False = Não OK
     observacao = db.Column(db.String(255))
     
-    ordem_servico = db.relationship('OrdemServico', backref='checklist_respostas')
+    ordem_servico = db.relationship('OrdemServico', backref=db.backref('checklist_respostas', cascade='all, delete-orphan'))
     item = db.relationship('ChecklistItem')
 
 class Localizacao(db.Model):
@@ -119,7 +119,7 @@ class ParametroMaquinaMensal(db.Model):
     maquina_id = db.Column(db.Integer, db.ForeignKey('equipamentos.id'), nullable=False)
     mes = db.Column(db.Integer, nullable=False)
     ano = db.Column(db.Integer, nullable=False)
-    horas_turno_dia = db.Column(db.Float, default=8.0)
+    horas_turno_dia = db.Column(db.Float, default=10.0)
     esta_ativa = db.Column(db.Boolean, default=True)
     
     maquina = db.relationship('Equipamento', backref='parametros_mensais')
